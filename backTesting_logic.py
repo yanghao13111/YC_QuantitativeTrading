@@ -49,46 +49,44 @@ class MultiMATradingStrategy(bt.Strategy):
         dt = dt or self.datas[0].datetime.date(0)
         print(f'{dt.isoformat()} {txt}')
 
-# 创建回测环境
-cerebro = bt.Cerebro()
-cerebro.addstrategy(MultiMATradingStrategy)
+def run_backtest(data_file, from_date, to_date):
+    cerebro = bt.Cerebro()
+    cerebro.addstrategy(MultiMATradingStrategy)
 
-# 加载市场数据
-data_file = os.path.join(os.path.dirname(__file__), 'market_data.csv')
-data = bt.feeds.GenericCSVData(
-    dataname=data_file,
-    fromdate=datetime(2023, 11, 14),  # 根据您的数据起始日期调整
-    todate=datetime(2023, 11, 24),    # 根据您的数据结束日期调整
-    nullvalue=0.0,
-    dtformat=('%Y-%m-%d %H:%M:%S'),
-    datetime=0,
-    time=-1,
-    open=1,
-    high=2,
-    low=3,
-    close=4,
-    volume=5,
-    openinterest=-1,
-    timeframe=bt.TimeFrame.Minutes,
-    compression=60
-)
+    data = bt.feeds.GenericCSVData(
+        dataname=data_file,
+        fromdate=from_date,  # 根据您的数据起始日期调整
+        todate=to_date,      # 根据您的数据结束日期调整
+        nullvalue=0.0,
+        dtformat=('%Y-%m-%d %H:%M:%S'),
+        datetime=0,
+        time=-1,  # 没有单独的时间列
+        open=1,
+        high=2,
+        low=3,
+        close=4,
+        volume=5,
+        openinterest=-1,
+        timeframe=bt.TimeFrame.Minutes,  # 由于数据是每小时的，我们将时间框架设置为分钟
+        compression=60  # 将数据压缩设置为每 60 分钟
+    )
 
-cerebro.adddata(data)
+    cerebro.adddata(data)
 
-# 设置初始资金
-cerebro.broker.setcash(1000000.0)
+    # 设置初始资金
+    cerebro.broker.setcash(1000000.0)
 
-# 设置每次交易的股票数量（可选）
-cerebro.addsizer(bt.sizers.FixedSize, stake=10)
+    # 设置每次交易的股票数量（可选）
+    cerebro.addsizer(bt.sizers.FixedSize, stake=10)
 
-# 设置佣金（可选）
-cerebro.broker.setcommission(commission=0.001)
+    # 设置佣金（可选）
+    cerebro.broker.setcommission(commission=0.001)
 
-# 运行策略
-cerebro.run()
+    # 运行策略
+    cerebro.run()
 
-# 打印最终结果
-print(f'final: {cerebro.broker.getvalue()}')
+    # 打印最终结果
+    print(f'Final Portfolio Value: {cerebro.broker.getvalue()}')
 
-# 绘制结果
-cerebro.plot(style='candlestick')
+    # 绘制结果
+    cerebro.plot(style='candlestick')
