@@ -19,3 +19,8 @@ def collect_data(symbol, timeframe, since):
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Asia/Taipei')
     df['timestamp'] = df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
     return df
+
+
+# 例如：搜集BTC/USDT的數據
+df = collect_data('BTC/USDT', '1h', '2023-01-01T00:00:00Z')
+df.to_csv('market_data.csv', index=False)
