@@ -1,1 +1,8 @@
-2330_data.csv
+# 忽略 Python 編譯生成的快取目錄
+__pycache__/
+
+# 忽略市場數據 CSV 文件
+market_data.csv
+
+
+

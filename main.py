@@ -3,12 +3,10 @@ import data_collection
 import backTesting_logic
 from datetime import datetime, timedelta
 
-# 假設這裡是一些參數設置
+# 參數設置
 symbol = 'BTC/USDT'
 timeframe = '1h'
-
-# 計算10天前的日期
-ten_days_ago = datetime.utcnow() - timedelta(days=10)
+ten_days_ago = datetime.utcnow() - timedelta(days=10) # 計算10天前的日期
 since = ten_days_ago.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 # 調用數據搜集
