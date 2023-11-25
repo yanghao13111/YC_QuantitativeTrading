@@ -49,6 +49,8 @@ class MultiMATradingStrategy(bt.Strategy):
         dt = dt or self.datas[0].datetime.date(0)
         print(f'{dt.isoformat()} {txt}')
 
+
+# 目前策略
 def run_backtest(data_file, from_date, to_date):
     cerebro = bt.Cerebro()
     cerebro.addstrategy(MultiMATradingStrategy)
