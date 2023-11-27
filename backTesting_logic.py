@@ -1,94 +1,81 @@
 import backtrader as bt
-import os
+from itertools import combinations, product
 from datetime import datetime
 
-class MultiMATradingStrategy(bt.Strategy):
-    params = (
-        ("ma5_period", 5),
-        ("ma10_period", 10),
-        ("ma20_period", 20),
-        ("ma50_period", 50),
-        ("ma100_period", 100),
-        ("ma200_period", 200)
-    )
+# 定义一个函数来生成所有条件的组合
+def generate_expressions(conditions):
+    expressions = []
+    for r in range(1, len(conditions) + 1):
+        for subset in combinations(conditions, r):
+            operators = list(product([' and ', ' or '], repeat=r-1))
+            for operator in operators:
+                expr = ''
+                for i, cond in enumerate(subset):
+                    expr += cond
+                    if i < len(operator):
+                        expr += operator[i]
+                expressions.append(expr)
+    return expressions
+
+class MultiStrategy(bt.Strategy):
+    params = (('expression', ''),)  # 添加一个参数用于接收买入条件表达式
 
     def __init__(self):
-        # 初始化移动平均线指标
-        self.ma5 = bt.indicators.SimpleMovingAverage(self.data.close, period=self.params.ma5_period)
-        self.ma10 = bt.indicators.SimpleMovingAverage(self.data.close, period=self.params.ma10_period)
-        self.ma20 = bt.indicators.SimpleMovingAverage(self.data.close, period=self.params.ma20_period)
-        self.ma50 = bt.indicators.SimpleMovingAverage(self.data.close, period=self.params.ma50_period)
-        self.ma100 = bt.indicators.SimpleMovingAverage(self.data.close, period=self.params.ma100_period)
-        self.ma200 = bt.indicators.SimpleMovingAverage(self.data.close, period=self.params.ma200_period)
-
         self.order = None
+        self.sma5 = bt.indicators.SimpleMovingAverage(self.data.close, period=5)
+        self.sma10 = bt.indicators.SimpleMovingAverage(self.data.close, period=10)
+        self.sma20 = bt.indicators.SimpleMovingAverage(self.data.close, period=20)
 
     def next(self):
-        # 取消未完成的订单
         if self.order:
             self.cancel(self.order)
 
-        # 入场条件
-        if not self.position and self.ma5[-1] <= self.ma10[-1] and self.ma5[0] > self.ma10[0]:
+        # 使用 eval 来计算动态生成的布尔表达式
+        if not self.position and eval(self.params.expression):
             self.order = self.buy()
 
-        # 出场条件
-        elif self.position and (self.ma5[0] < self.ma10[0] or self.ma10[0] < self.ma20[0] or self.data.close[0] < self.ma50[0]):
+        # 出场条件需要根据您的策略来定义
+        elif self.position and not eval(self.params.expression):  # 这里的条件需要根据实际策略进行调整
             self.order = self.close()
 
-    def notify_order(self, order):
-        if order.status in [order.Completed]:
-            if order.isbuy():
-                self.log(f'BUY EXECUTED, Price: {order.executed.price}, Cost: {order.executed.value}, Comm {order.executed.comm}')
-            elif order.issell():
-                self.log(f'SELL EXECUTED, Price: {order.executed.price}, Cost: {order.executed.value}, Comm {order.executed.comm}')
-            self.bar_executed = len(self)
-
-    def log(self, txt, dt=None):
-        ''' Logging function '''
-        dt = dt or self.datas[0].datetime.date(0)
-        print(f'{dt.isoformat()} {txt}')
-
-
-# 目前策略
-def run_backtest(data_file, from_date, to_date):
+def run_backtest(data_file, from_date, to_date, expression):
     cerebro = bt.Cerebro()
-    cerebro.addstrategy(MultiMATradingStrategy)
+    cerebro.addstrategy(MultiStrategy, expression=expression)
 
     data = bt.feeds.GenericCSVData(
         dataname=data_file,
-        fromdate=from_date,  # 根据您的数据起始日期调整
-        todate=to_date,      # 根据您的数据结束日期调整
+        fromdate=datetime.strptime(from_date, '%Y-%m-%d'),
+        todate=datetime.strptime(to_date, '%Y-%m-%d'),
         nullvalue=0.0,
-        dtformat=('%Y-%m-%d %H:%M:%S'),
+        dtformat=('%Y-%m-%d %H:%M:%S'), 
         datetime=0,
-        time=-1,  # 没有单独的时间列
         open=1,
         high=2,
         low=3,
         close=4,
         volume=5,
-        openinterest=-1,
-        timeframe=bt.TimeFrame.Minutes,  # 由于数据是每小时的，我们将时间框架设置为分钟
-        compression=60  # 将数据压缩设置为每 60 分钟
+        openinterest=-1
     )
 
     cerebro.adddata(data)
-
-    # 设置初始资金
     cerebro.broker.setcash(1000000.0)
-
-    # 设置每次交易的股票数量（可选）
     cerebro.addsizer(bt.sizers.FixedSize, stake=10)
-
-    # 设置佣金（可选）
     cerebro.broker.setcommission(commission=0.001)
-
-    # 运行策略
     cerebro.run()
+    print(f'Final Portfolio Value: {cerebro.broker.getvalue() - 1000000.0}')
+    cerebro.plot()
 
-    # 打印最终结果
-    print(f'Final Portfolio Value: {cerebro.broker.getvalue()}')
+# 假设的市场条件布尔表达式
+A = "self.data.close[0] > self.sma5[0]"  # 例如：今日收盘价高于5日均线
+B = "self.data.close[0] < self.sma10[0]" # 另一个市场条件的例子
+C = "self.data.close[0] < self.sma20[0]"
 
-    # 绘制结果
-    cerebro.plot(style='candlestick')
+
+# 创建一个包含这些条件的列表
+conditions = [A, B, C]
+expressions = generate_expressions(conditions)
+
+# 对每个生成的表达式运行回测
+for expr in expressions:
+    run_backtest('/Users/cchtony/Desktop/YC_QuantitativeTrading/market_data.csv', '2022-11-24', '2023-11-24', expr)
+    print(expr)
