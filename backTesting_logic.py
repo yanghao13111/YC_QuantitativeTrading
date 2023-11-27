@@ -25,6 +25,9 @@ class MultiStrategy(bt.Strategy):
         self.sma5 = bt.indicators.SimpleMovingAverage(self.data.close, period=5)
         self.sma10 = bt.indicators.SimpleMovingAverage(self.data.close, period=10)
         self.sma20 = bt.indicators.SimpleMovingAverage(self.data.close, period=20)
+        self.sma60 = bt.indicators.SimpleMovingAverage(self.data.close, period=60)
+        self.sma120 = bt.indicators.SimpleMovingAverage(self.data.close, period=120)
+        self.sma240 = bt.indicators.SimpleMovingAverage(self.data.close, period=240)
 
     def next(self):
         if self.order:
@@ -38,7 +41,7 @@ class MultiStrategy(bt.Strategy):
         elif self.position and not eval(self.params.expression):  # 这里的条件需要根据实际策略进行调整
             self.order = self.close()
 
-def run_backtest(data_file, from_date, to_date, expression):
+def run_backtest(data_file, from_date, to_date, expression, plot=False):
     cerebro = bt.Cerebro()
     cerebro.addstrategy(MultiStrategy, expression=expression)
 
@@ -62,20 +65,51 @@ def run_backtest(data_file, from_date, to_date, expression):
     cerebro.addsizer(bt.sizers.FixedSize, stake=10)
     cerebro.broker.setcommission(commission=0.001)
     cerebro.run()
-    print(f'Final Portfolio Value: {cerebro.broker.getvalue() - 1000000.0}')
-    cerebro.plot()
+    final_value = cerebro.broker.getvalue() - 1000000.0
+    if plot:
+        cerebro.plot()
+    else:
+        return final_value, expression
 
 # 假设的市场条件布尔表达式
-A = "self.data.close[0] > self.sma5[0]"  # 例如：今日收盘价高于5日均线
-B = "self.data.close[0] < self.sma10[0]" # 另一个市场条件的例子
-C = "self.data.close[0] < self.sma20[0]"
+A = "self.data.close[0] > self.sma5[0]"
+B = "self.data.close[0] > self.sma10[0]"
+C = "self.data.close[0] > self.sma20[0]"
+D = "self.data.close[0] > self.sma60[0]"
+E = "self.data.close[0] > self.sma120[0]"
+F = "self.data.close[0] > self.sma240[0]"  
+G = "self.data.close[0] < self.sma10[0]" 
+H = "self.data.close[0] < self.sma20[0]"
+I = "self.data.close[0] < self.sma60[0]"
+J = "self.data.close[0] < self.sma120[0]"
+K = "self.data.close[0] < self.sma240[0]"
+
 
 
 # 创建一个包含这些条件的列表
-conditions = [A, B, C]
+conditions = [A, B]
 expressions = generate_expressions(conditions)
+
+# 创建一个列表来存储每次回测的结果
+backtest_results = []
 
 # 对每个生成的表达式运行回测
 for expr in expressions:
-    run_backtest('/Users/cchtony/Desktop/YC_QuantitativeTrading/market_data.csv', '2022-11-24', '2023-11-24', expr)
-    print(expr)
+    # run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr)
+    # print(expr)
+    result = run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr)
+    backtest_results.append(result)
+
+
+
+# 根据资产价值排序结果
+backtest_results.sort(key=lambda x: x[0], reverse=True)
+
+# 选取前三个结果
+top_3_results = backtest_results[:3]
+
+for value, expr in top_3_results:
+    print(f"策略組合: {expr}, 淨收益: {value}")
+
+    # 重新运行回测以绘制图表
+    run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr, True)
