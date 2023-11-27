@@ -1,6 +1,7 @@
 import backtrader as bt
 from itertools import combinations, product
 from datetime import datetime
+import backtrader.analyzers as btanalyzers
 
 # 定义一个函数来生成所有条件的组合
 def generate_expressions(conditions):
@@ -64,12 +65,21 @@ def run_backtest(data_file, from_date, to_date, expression, plot=False):
     cerebro.broker.setcash(1000000.0)
     cerebro.addsizer(bt.sizers.FixedSize, stake=10)
     cerebro.broker.setcommission(commission=0.001)
-    cerebro.run()
+
+    # 添加分析器
+    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio')
+    cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
+
+
+    results = cerebro.run()
     final_value = cerebro.broker.getvalue() - 1000000.0
+    sharpe_ratio = results[0].analyzers.sharpe_ratio.get_analysis()['sharperatio']
+    max_drawdown = results[0].analyzers.drawdown.get_analysis()['max']['drawdown']
+
     if plot:
         cerebro.plot()
     else:
-        return final_value, expression
+        return final_value, expression, sharpe_ratio, max_drawdown
 
 # 假设的市场条件布尔表达式
 A = "self.data.close[0] > self.sma5[0]"
@@ -87,7 +97,7 @@ K = "self.data.close[0] < self.sma240[0]"
 
 
 # 创建一个包含这些条件的列表
-conditions = [A, B]
+conditions = [A, B, C, D, E]
 expressions = generate_expressions(conditions)
 
 # 创建一个列表来存储每次回测的结果
@@ -108,8 +118,8 @@ backtest_results.sort(key=lambda x: x[0], reverse=True)
 # 选取前三个结果
 top_3_results = backtest_results[:3]
 
-for value, expr in top_3_results:
-    print(f"策略組合: {expr}, 淨收益: {value}")
+for value, expr, sharpe, drawdown in top_3_results:
+    print(f"策略組合: {expr}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
 
     # 重新运行回测以绘制图表
     run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr, True)
