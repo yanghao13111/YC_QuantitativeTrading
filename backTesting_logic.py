@@ -81,23 +81,24 @@ def run_backtest(data_file, from_date, to_date, expression, plot=False):
     else:
         return final_value, expression, sharpe_ratio, max_drawdown
 
-# 假设的市场条件布尔表达式
+# 表達式
 A = "self.data.close[0] > self.sma5[0]"
 B = "self.data.close[0] > self.sma10[0]"
 C = "self.data.close[0] > self.sma20[0]"
 D = "self.data.close[0] > self.sma60[0]"
 E = "self.data.close[0] > self.sma120[0]"
-F = "self.data.close[0] > self.sma240[0]"  
-G = "self.data.close[0] < self.sma10[0]" 
-H = "self.data.close[0] < self.sma20[0]"
-I = "self.data.close[0] < self.sma60[0]"
-J = "self.data.close[0] < self.sma120[0]"
-K = "self.data.close[0] < self.sma240[0]"
+F = "self.data.close[0] > self.sma240[0]" 
+G = "self.data.close[0] < self.sma5[0]"
+H = "self.data.close[0] < self.sma10[0]" 
+I = "self.data.close[0] < self.sma20[0]"
+J = "self.data.close[0] < self.sma60[0]"
+K = "self.data.close[0] < self.sma120[0]"
+L = "self.data.close[0] < self.sma240[0]"
 
 
 
 # 创建一个包含这些条件的列表
-conditions = [A, B, C, D, E]
+conditions = [A, B, C, G, H, I]
 expressions = generate_expressions(conditions)
 
 # 创建一个列表来存储每次回测的结果
@@ -105,8 +106,6 @@ backtest_results = []
 
 # 对每个生成的表达式运行回测
 for expr in expressions:
-    # run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr)
-    # print(expr)
     result = run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr)
     backtest_results.append(result)
 
