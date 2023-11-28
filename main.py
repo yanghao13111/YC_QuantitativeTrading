@@ -8,18 +8,42 @@ from datetime import datetime, timedelta
 symbol = 'BTC/USDT'
 timeframe = '1h'
 
-# 時間範圍設置
-start_date = datetime.utcnow() - timedelta(days=365)
-end_date = datetime.utcnow()
+# 時間範圍設置 method1: datetime
+# start_date = datetime.utcnow() - timedelta(days=365) 
+# end_date = datetime.utcnow()
 
-# 調用數據搜集
-df = data_collection.collect_data(symbol, timeframe, start_date, end_date)
+# 時間範圍設置 method2: str to datetime
+# start_date_str = '2022-11-24'
+# end_date_str = '2023-11-24'  
+# start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+# end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
 
-# 保存數據供回測使用
-df.to_csv('market_data.csv', index=False)
+# # 調用數據搜集
+# df = data_collection.collect_data(symbol, timeframe, start_date, end_date)
+
+# # 保存數據供回測使用
+# df.to_csv('market_data.csv', index=False)
+
+
+# 训练数据时间范围: 一年前到半年前
+train_start_date = datetime.utcnow() - timedelta(days=547)
+train_end_date = datetime.utcnow() - timedelta(days=182)
+
+# 验证数据时间范围: 半年前到现在
+validation_start_date = datetime.utcnow() - timedelta(days=182)
+validation_end_date = datetime.utcnow() - timedelta(days=60)
+
+# 訓練數據搜集
+df_train = data_collection.collect_data(symbol, timeframe, train_start_date, train_end_date)
+df_train.to_csv('train_data.csv', index=False)
+
+# 驗證數據搜集
+df_validation = data_collection.collect_data(symbol, timeframe, validation_start_date, validation_end_date)
+df_validation.to_csv('validation_data.csv', index=False)
 
 
 # indicators expression
+# ma
 A = "self.data.close[0] > self.sma5[0]"
 B = "self.data.close[0] > self.sma10[0]"
 C = "self.data.close[0] > self.sma20[0]"
@@ -32,8 +56,18 @@ I = "self.data.close[0] < self.sma20[0]"
 J = "self.data.close[0] < self.sma60[0]"
 K = "self.data.close[0] < self.sma120[0]"
 L = "self.data.close[0] < self.sma240[0]"
+# macd
+M = "self.macd.macd[0] > self.macd.signal[0]"
+N = "self.macd.macd[0] < self.macd.signal[0]"
+# rsi
+O = "self.rsi[0] > 70"
+P = "self.rsi[0] < 30"
+# stoch
+Q = "self.stoch[0] > 80"
+R = "self.stoch[0] < 20"
 
-conditions = [A, B]
+
+conditions = [A, B, C]
 expressions = backTesting_logic.generate_expressions(conditions)
 
 
@@ -42,7 +76,7 @@ backtest_results = []
 
 # 对每个生成的表达式运行回测
 for expr in expressions:
-    result = backTesting_logic.run_backtest('market_data.csv', start_date, end_date, expr)
+    result = backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, expr)
     backtest_results.append(result)
 
 
@@ -56,5 +90,16 @@ for value, expr, sharpe, drawdown in top_3_results:
     print(f"策略組合: {expr}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
 
     # 重新运行回测以绘制图表
-    backTesting_logic.run_backtest('market_data.csv', start_date, end_date, expr, True)
+    backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, expr, True)
+
+print('-------------------------------------------------------------------------------')
+
+for value, expr, sharpe, drawdown in top_3_results:
+
+    # 在验证数据集上运行相同的策略
+    val_result = backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, expr)
+    val_value, val_expr, val_sharpe, val_drawdown = val_result
+
+    print(f"策略組合: {val_expr}, 淨收益: {val_value}, sharpe: {val_sharpe}, MDD: {val_drawdown}")
+    backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, expr, True)
 

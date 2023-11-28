@@ -23,12 +23,23 @@ class MultiStrategy(bt.Strategy):
 
     def __init__(self):
         self.order = None
+
+        # SMA 指标
         self.sma5 = bt.indicators.SimpleMovingAverage(self.data.close, period=5)
         self.sma10 = bt.indicators.SimpleMovingAverage(self.data.close, period=10)
         self.sma20 = bt.indicators.SimpleMovingAverage(self.data.close, period=20)
         self.sma60 = bt.indicators.SimpleMovingAverage(self.data.close, period=60)
         self.sma120 = bt.indicators.SimpleMovingAverage(self.data.close, period=120)
         self.sma240 = bt.indicators.SimpleMovingAverage(self.data.close, period=240)
+
+        # MACD 指标
+        self.macd = bt.indicators.MACD(self.data.close)
+        
+        # RSI 指标
+        self.rsi = bt.indicators.RSI(self.data.close)
+        
+        # Stochastic 指标
+        self.stoch = bt.indicators.Stochastic(self.data)
 
     def next(self):
         if self.order:
