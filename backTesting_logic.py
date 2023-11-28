@@ -48,8 +48,8 @@ def run_backtest(data_file, from_date, to_date, expression, plot=False):
 
     data = bt.feeds.GenericCSVData(
         dataname=data_file,
-        fromdate=datetime.strptime(from_date, '%Y-%m-%d'),
-        todate=datetime.strptime(to_date, '%Y-%m-%d'),
+        fromdate=from_date,
+        todate=to_date,
         nullvalue=0.0,
         dtformat=('%Y-%m-%d %H:%M:%S'), 
         datetime=0,

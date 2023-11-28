@@ -1,20 +1,23 @@
 import ccxt
 import pandas as pd
+import pytz
 from datetime import datetime
 
-def collect_data(symbol, timeframe):
+def collect_data(symbol, timeframe, start_date, end_date):
     exchange = ccxt.binance({
         'rateLimit': 1200,
         'enableRateLimit': True,
     })
 
     limit = 1000  # 每次请求的数据点数上限
-    now = datetime.utcnow()
-    since = exchange.parse8601((now - pd.Timedelta(days=365)).isoformat())  # 近一年的数据
+    
+    # 转换为 UTC 时间并格式化为 ISO 8601
+    since = int(start_date.astimezone(pytz.utc).timestamp()) * 1000
+    end = int(end_date.astimezone(pytz.utc).timestamp()) * 1000
 
     all_data = []
 
-    while True:
+    while since < end:
         ohlcv = exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
         if not ohlcv:
             break

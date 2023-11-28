@@ -8,8 +8,12 @@ from datetime import datetime, timedelta
 symbol = 'BTC/USDT'
 timeframe = '1h'
 
+# 時間範圍設置
+start_date = datetime.utcnow() - timedelta(days=365)
+end_date = datetime.utcnow()
+
 # 調用數據搜集
-df = data_collection.collect_data(symbol, timeframe)
+df = data_collection.collect_data(symbol, timeframe, start_date, end_date)
 
 # 保存數據供回測使用
 df.to_csv('market_data.csv', index=False)
@@ -38,7 +42,7 @@ backtest_results = []
 
 # 对每个生成的表达式运行回测
 for expr in expressions:
-    result = backTesting_logic.run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr)
+    result = backTesting_logic.run_backtest('market_data.csv', start_date, end_date, expr)
     backtest_results.append(result)
 
 
@@ -52,5 +56,5 @@ for value, expr, sharpe, drawdown in top_3_results:
     print(f"策略組合: {expr}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
 
     # 重新运行回测以绘制图表
-    backTesting_logic.run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr, True)
+    backTesting_logic.run_backtest('market_data.csv', start_date, end_date, expr, True)
 
