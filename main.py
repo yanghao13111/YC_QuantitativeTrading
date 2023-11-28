@@ -2,6 +2,7 @@
 import data_collection
 import backTesting_logic
 from datetime import datetime, timedelta
+import time
 
 
 # 參數設置
@@ -18,7 +19,7 @@ df = data_collection.collect_data(symbol, timeframe, start_date, end_date)
 # 保存數據供回測使用
 df.to_csv('market_data.csv', index=False)
 
-
+start_time = time.time()
 # indicators expression
 A = "self.data.close[0] > self.sma5[0]"
 B = "self.data.close[0] > self.sma10[0]"
@@ -33,7 +34,7 @@ J = "self.data.close[0] < self.sma60[0]"
 K = "self.data.close[0] < self.sma120[0]"
 L = "self.data.close[0] < self.sma240[0]"
 
-conditions = [A, B]
+conditions = [E, F, G, H]
 expressions = backTesting_logic.generate_expressions(conditions)
 
 
@@ -55,6 +56,8 @@ top_3_results = backtest_results[:3]
 for value, expr, sharpe, drawdown in top_3_results:
     print(f"策略組合: {expr}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
 
-    # 重新运行回测以绘制图表
-    backTesting_logic.run_backtest('market_data.csv', start_date, end_date, expr, True)
+    # # 重新运行回测以绘制图表
+    # backTesting_logic.run_backtest('market_data.csv', start_date, end_date, expr, True)
 
+end_time = time.time()
+print(f"执行时间：{end_time - start_time} 秒")
