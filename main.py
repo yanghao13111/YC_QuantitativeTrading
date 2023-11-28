@@ -14,5 +14,43 @@ df = data_collection.collect_data(symbol, timeframe)
 # 保存數據供回測使用
 df.to_csv('market_data.csv', index=False)
 
-# 調用回測邏輯
-backTesting_logic.run_backtest('market_data.csv', datetime(2022, 11, 24), datetime(2023, 11, 24))
+
+# indicators expression
+A = "self.data.close[0] > self.sma5[0]"
+B = "self.data.close[0] > self.sma10[0]"
+C = "self.data.close[0] > self.sma20[0]"
+D = "self.data.close[0] > self.sma60[0]"
+E = "self.data.close[0] > self.sma120[0]"
+F = "self.data.close[0] > self.sma240[0]" 
+G = "self.data.close[0] < self.sma5[0]"
+H = "self.data.close[0] < self.sma10[0]" 
+I = "self.data.close[0] < self.sma20[0]"
+J = "self.data.close[0] < self.sma60[0]"
+K = "self.data.close[0] < self.sma120[0]"
+L = "self.data.close[0] < self.sma240[0]"
+
+conditions = [A, B]
+expressions = backTesting_logic.generate_expressions(conditions)
+
+
+# 創建一個列表来存储每次回测的结果
+backtest_results = []
+
+# 对每个生成的表达式运行回测
+for expr in expressions:
+    result = backTesting_logic.run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr)
+    backtest_results.append(result)
+
+
+# 根据资产价值排序结果
+backtest_results.sort(key=lambda x: x[0], reverse=True)
+
+# 选取前三个结果
+top_3_results = backtest_results[:3]
+
+for value, expr, sharpe, drawdown in top_3_results:
+    print(f"策略組合: {expr}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
+
+    # 重新运行回测以绘制图表
+    backTesting_logic.run_backtest('market_data.csv', '2022-11-24', '2023-11-24', expr, True)
+
