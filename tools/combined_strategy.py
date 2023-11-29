@@ -51,4 +51,4 @@ for expr in expressions:
 
 # 打印最终的计数
 print(len(expressions))
-print(f"generate_expressions 执行时间：{end_time - start_time} 秒")
+print(f"执行时间：{end_time - start_time} 秒")
