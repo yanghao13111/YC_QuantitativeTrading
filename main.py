@@ -5,27 +5,9 @@ from datetime import datetime, timedelta
 import time
 from joblib import Parallel, delayed
 
-# 參數設置
+# 參數設置#######################################
 symbol = 'BTC/USDT'
 timeframe = '1h'
-
-# 训练数据时间范围: 一年前到半年前
-train_start_date = datetime.utcnow() - timedelta(days=547)
-train_end_date = datetime.utcnow() - timedelta(days=182)
-
-# 验证数据时间范围: 半年前到现在
-validation_start_date = datetime.utcnow() - timedelta(days=182)
-validation_end_date = datetime.utcnow() - timedelta(days=60)
-
-# # 訓練數據搜集
-# df_train = data_collection.collect_data(symbol, timeframe, train_start_date, train_end_date)
-# df_train.to_csv('train_data.csv', index=False)
-
-# # 驗證數據搜集
-# df_validation = data_collection.collect_data(symbol, timeframe, validation_start_date, validation_end_date)
-# df_validation.to_csv('validation_data.csv', index=False)
-
-start_time = time.time()
 # indicators expression
 # ma
 A = "self.data.close[0] > self.sma5[0]"
@@ -49,11 +31,29 @@ P = "self.rsi[0] < 30"
 # stoch
 Q = "self.stoch[0] > 80"
 R = "self.stoch[0] < 20"
-
 # Maximum is 9
 conditions = [E, F, A, B, C]
 # Approximately equal to conditions/2
 combined_number = 3
+##############################################
+
+# 训练数据时间范围: 一年前到半年前
+train_start_date = datetime.utcnow() - timedelta(days=547)
+train_end_date = datetime.utcnow() - timedelta(days=182)
+
+# 验证数据时间范围: 半年前到现在
+validation_start_date = datetime.utcnow() - timedelta(days=182)
+validation_end_date = datetime.utcnow() - timedelta(days=60)
+
+# # 訓練數據搜集
+# df_train = data_collection.collect_data(symbol, timeframe, train_start_date, train_end_date)
+# df_train.to_csv('train_data.csv', index=False)
+
+# # 驗證數據搜集
+# df_validation = data_collection.collect_data(symbol, timeframe, validation_start_date, validation_end_date)
+# df_validation.to_csv('validation_data.csv', index=False)
+
+start_time = time.time()
 expressions = backTesting_logic.generate_expressions(conditions, combined_number)
 
 
