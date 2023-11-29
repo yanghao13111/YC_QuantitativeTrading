@@ -19,7 +19,7 @@ N = True
 O = False
 
 # 创建一个包含 10 个条件的列表
-conditions = ['A', 'B', 'C', 'E', 'F', 'G', 'H', 'I']
+conditions = ['A', 'B', 'C', 'D', 'E', 'F']
 
 # 定义一个函数来生成所有条件的组合
 def generate_expressions(conditions):
@@ -45,9 +45,9 @@ def generate_expressions(conditions):
 start_time = time.time()
 expressions = generate_expressions(conditions)
 end_time = time.time()
-for expr in expressions:
-    # 执行每个表达式并打印结果
-    print(f"{expr}: {eval(expr)}")
+# for expr in expressions:
+#     # 执行每个表达式并打印结果
+#     print(f"{expr}: {eval(expr)}")
 
 # 打印最终的计数
 print(len(expressions))

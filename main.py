@@ -50,8 +50,11 @@ P = "self.rsi[0] < 30"
 Q = "self.stoch[0] > 80"
 R = "self.stoch[0] < 20"
 
-conditions = [E, F, A, B, C, G]
-expressions = backTesting_logic.generate_expressions(conditions)
+# Maximum is 9
+conditions = [E, F, A, B, C]
+# Approximately equal to conditions/2
+combined_number = 3
+expressions = backTesting_logic.generate_expressions(conditions, combined_number)
 
 
 # 使用 joblib 平行處理回測

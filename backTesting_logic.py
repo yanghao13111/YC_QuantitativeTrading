@@ -4,18 +4,24 @@ from datetime import datetime
 import backtrader.analyzers as btanalyzers
 
 # 定义一个函数来生成所有条件的组合
-def generate_expressions(conditions):
+def generate_expressions(conditions, combined_number):
     expressions = []
-    for r in range(1, len(conditions) + 1):
+    
+    # 针对长度为 1 到 combined_number 的组合生成表达式
+    for r in range(1, min(len(conditions), combined_number) + 1):
         for subset in combinations(conditions, r):
-            operators = list(product([' and ', ' or '], repeat=r-1))
-            for operator in operators:
-                expr = ''
-                for i, cond in enumerate(subset):
-                    expr += cond
-                    if i < len(operator):
-                        expr += operator[i]
-                expressions.append(expr)
+            if len(subset) == 1:
+                expressions.append(subset[0])
+            else:
+                operators = list(product([' and ', ' or '], repeat=len(subset)-1))
+                for operator in operators:
+                    expr = ''
+                    for i, cond in enumerate(subset):
+                        expr += cond
+                        if i < len(operator):
+                            expr += operator[i]
+                    expressions.append(expr)
+
     return expressions
 
 class MultiStrategy(bt.Strategy):
