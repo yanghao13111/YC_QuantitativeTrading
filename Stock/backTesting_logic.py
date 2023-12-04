@@ -31,12 +31,9 @@ class MultiStrategy(bt.Strategy):
         self.order = None
 
         # SMA 指标
-        self.sma5 = bt.indicators.SimpleMovingAverage(self.data.close, period=5)
-        self.sma10 = bt.indicators.SimpleMovingAverage(self.data.close, period=10)
-        self.sma20 = bt.indicators.SimpleMovingAverage(self.data.close, period=20)
-        self.sma60 = bt.indicators.SimpleMovingAverage(self.data.close, period=60)
-        self.sma120 = bt.indicators.SimpleMovingAverage(self.data.close, period=120)
-        self.sma240 = bt.indicators.SimpleMovingAverage(self.data.close, period=240)
+        self.sma25 = bt.indicators.SimpleMovingAverage(self.data.close, period=25)
+        self.sma50 = bt.indicators.SimpleMovingAverage(self.data.close, period=50)
+        self.sma100 = bt.indicators.SimpleMovingAverage(self.data.close, period=100)
 
         # MACD 指标
         self.macd = bt.indicators.MACD(self.data.close)
@@ -74,14 +71,13 @@ def run_backtest(data_file, from_date, to_date, expression, plot=False):
         high=2,
         low=3,
         close=4,
-        volume=5,
-        openinterest=-1
+        volume=5
     )
 
     cerebro.adddata(data)
     cerebro.broker.setcash(1000000.0)
     cerebro.addsizer(bt.sizers.FixedSize, stake=10)
-    cerebro.broker.setcommission(commission=0.001)
+    cerebro.broker.setcommission(commission=0.0015)
 
     # 添加分析器
     cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio')
