@@ -1,8 +1,11 @@
+# 忽略 macOS 系統生成的 .DS_Store 文件
+.DS_Store
+
 # 忽略 Python 編譯生成的快取目錄
 __pycache__/
 
 # 忽略市場數據 CSV 文件
-market_data.csv
-
+train_data.csv
+validation_data.csv
 
 
