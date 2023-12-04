@@ -76,21 +76,21 @@ backtest_results.sort(key=lambda x: x[0], reverse=True)
 # 选取前三个结果
 top_3_results = backtest_results[:3]
 
-for value, expr, sharpe, drawdown in top_3_results:
-    print(f"策略組合: {expr}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
+for value, buy_expression, sell_expression, sharpe, drawdown in top_3_results:
+    print(f"買入策略組合: {buy_expression}, 賣出策略組合: {sell_expression}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
 
     # 重新运行回测以绘制图表
     # backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, expr, True)
 
 print('-------------------------------------------------------------------------------')
 
-for value, expr, sharpe, drawdown in top_3_results:
+for value, buy_expression, sell_expression, drawdown in top_3_results:
 
     # 在验证数据集上运行相同的策略
-    val_result = backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, expr)
+    val_result = backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, buy_expression, sell_expression)
     val_value, val_expr, val_sharpe, val_drawdown = val_result
 
-    print(f"策略組合: {val_expr}, 淨收益: {val_value}, sharpe: {val_sharpe}, MDD: {val_drawdown}")
+    print(f"買入策略組合: {buy_expression}, 賣出策略組合: {sell_expression}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
     # backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, expr, True)
 
 end_time = time.time()
