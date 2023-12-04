@@ -16,7 +16,7 @@ buy_pool = [indicators.A, indicators.B, indicators.C, indicators.M, indicators.O
 sell_pool = [indicators.G, indicators.H, indicators.I, indicators.N, indicators.P]
 # Approximately equal to conditions/2
 buy_combined = 2
-sell_combined = 2
+sell_combined = 3
 ##############################################
 
 month = 4
