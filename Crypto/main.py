@@ -7,7 +7,7 @@ from joblib import Parallel, delayed
 import itertools
 
 # 參數設置#######################################
-symbol = 'BTC/USDT'
+symbol = 'ETH/USDT'
 timeframe = '1h'
 # indicators expression
 # ma
@@ -33,20 +33,21 @@ P = "self.rsi[0] < 30"
 Q = "self.stoch[0] > 80"
 R = "self.stoch[0] < 20"
 # Maximum is 9
-buy_pool = [A, B, C, M, O]
-sell_pool = [A, B, C, M, O]
+buy_pool = [B, C, H, I]
+sell_pool = [B, C, H, I]
 # Approximately equal to conditions/2
-buy_combined = 1
-sell_combined = 1
+buy_combined = 2
+sell_combined = 2
 ##############################################
 
+month = 4
 # 训练数据时间范围: 一年前到半年前
-train_start_date = datetime.utcnow() - timedelta(days=60)
-train_end_date = datetime.utcnow() - timedelta(days=31)
+train_start_date = datetime.utcnow() - timedelta(days=month*30)
+train_end_date = datetime.utcnow() - timedelta(days=(month-1)*30 + 1)
 
 # 验证数据时间范围: 半年前到现在
-validation_start_date = datetime.utcnow() - timedelta(days=30)
-validation_end_date = datetime.utcnow()
+validation_start_date = datetime.utcnow() - timedelta(days=(month-1)*30)
+validation_end_date = datetime.utcnow() - timedelta(days=(month-2)*30 + 1)
 
 # 訓練數據搜集
 df_train = data_collection.collect_data(symbol, timeframe, train_start_date, train_end_date)
@@ -81,7 +82,7 @@ for value, buy_expression, sell_expression, sharpe, drawdown in top_3_results:
     print(f"買入策略組合: {buy_expression}, 賣出策略組合: {sell_expression}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
 
     # 重新运行回测以绘制图表
-    # backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, buy_expression, sell_expression, True)
+    backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, buy_expression, sell_expression, True)
 
 print('-------------------------------------------------------------------------------')
 
@@ -92,6 +93,6 @@ for value, buy_expression, sell_expression, sharpe, drawdown in top_3_results:
     val_value, val_buy_expression, val_sell_expression, val_sharpe, val_drawdown = val_result
 
     print(f"買入策略組合: {val_buy_expression}, 賣出策略組合: {val_sell_expression}, 淨收益: {val_value}, sharpe: {val_sharpe}, MDD: {val_drawdown}")
-    # backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, buy_expression, sell_expression, True)
+    backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, buy_expression, sell_expression, True)
 
 print(f"執行時間：{end_time - start_time} 秒")

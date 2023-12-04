@@ -84,7 +84,7 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
     cerebro.adddata(data)
     cerebro.broker.setcash(1000000.0)
     cerebro.addsizer(bt.sizers.PercentSizer, percents = 90)
-    cerebro.broker.setcommission(commission=0.0015)
+    cerebro.broker.setcommission(commission=0.0035)
 
     # 添加分析器
     cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio')
