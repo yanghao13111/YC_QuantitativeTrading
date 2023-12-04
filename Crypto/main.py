@@ -33,11 +33,11 @@ P = "self.rsi[0] < 30"
 Q = "self.stoch[0] > 80"
 R = "self.stoch[0] < 20"
 # Maximum is 9
-buy_pool = [A, B, C, D, E]
-sell_pool = [G, H, I, J, K]
+buy_pool = [A, B, C, M, O]
+sell_pool = [A, B, C, M, O]
 # Approximately equal to conditions/2
-buy_combined = 3
-sell_combined = 3
+buy_combined = 1
+sell_combined = 1
 ##############################################
 
 # 训练数据时间范围: 一年前到半年前
@@ -75,23 +75,23 @@ backtest_results.sort(key=lambda x: x[0], reverse=True)
 
 # 选取前三个结果
 top_3_results = backtest_results[:3]
+end_time = time.time()
 
 for value, buy_expression, sell_expression, sharpe, drawdown in top_3_results:
     print(f"買入策略組合: {buy_expression}, 賣出策略組合: {sell_expression}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
 
     # 重新运行回测以绘制图表
-    # backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, expr, True)
+    # backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, buy_expression, sell_expression, True)
 
 print('-------------------------------------------------------------------------------')
 
-for value, buy_expression, sell_expression, drawdown in top_3_results:
+for value, buy_expression, sell_expression, sharpe, drawdown in top_3_results:
 
     # 在验证数据集上运行相同的策略
     val_result = backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, buy_expression, sell_expression)
-    val_value, val_expr, val_sharpe, val_drawdown = val_result
+    val_value, val_buy_expression, val_sell_expression, val_sharpe, val_drawdown = val_result
 
-    print(f"買入策略組合: {buy_expression}, 賣出策略組合: {sell_expression}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
-    # backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, expr, True)
+    print(f"買入策略組合: {val_buy_expression}, 賣出策略組合: {val_sell_expression}, 淨收益: {val_value}, sharpe: {val_sharpe}, MDD: {val_drawdown}")
+    # backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, buy_expression, sell_expression, True)
 
-end_time = time.time()
 print(f"執行時間：{end_time - start_time} 秒")

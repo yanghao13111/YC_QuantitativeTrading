@@ -31,7 +31,7 @@ Y = False
 Z = True
 
 # 设置最多要取的条件数
-buy_pool_number = 6
+buy_pool_number = 5
 sell_pool_number = 5
 buy_combined = 3
 sell_combined = 3
