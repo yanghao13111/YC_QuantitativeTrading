@@ -4,6 +4,7 @@ import backTesting_logic
 from datetime import datetime, timedelta
 import time
 from joblib import Parallel, delayed
+import itertools
 
 # 參數設置#######################################
 symbol = 'BTC/USDT'
@@ -32,9 +33,11 @@ P = "self.rsi[0] < 30"
 Q = "self.stoch[0] > 80"
 R = "self.stoch[0] < 20"
 # Maximum is 9
-conditions = [A, B, C, D, E]
+buy_pool = [A, B, C, D, E]
+sell_pool = [G, H, I, J, K]
 # Approximately equal to conditions/2
-combined_number = 3
+buy_combined = 3
+sell_combined = 3
 ##############################################
 
 # 训练数据时间范围: 一年前到半年前
@@ -54,23 +57,18 @@ df_validation = data_collection.collect_data(symbol, timeframe, validation_start
 df_validation.to_csv('validation_data.csv', index=False)
 
 start_time = time.time()
-expressions = backTesting_logic.generate_expressions(conditions, combined_number)
-
+buy_expression = backTesting_logic.generate_expressions(buy_pool, buy_combined)
+sell_expression = backTesting_logic.generate_expressions(sell_pool, sell_combined)
 
 # 使用 joblib 平行處理回測
-def run_single_backtest(expr):
-    return backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, expr)
+def run_single_backtest(buy_expr, sell_expr):
+    return backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, buy_expr, sell_expr)
 
-backtest_results = Parallel(n_jobs=-1)(delayed(run_single_backtest)(expr) for expr in expressions)
+# 生成所有可能的买入和卖出表达式组合
+expression_combinations = list(itertools.product(buy_expression, sell_expression))
 
-
-# # 对每个生成的表达式运行回测
-# backtest_results = []
-
-# for expr in expressions:
-#     result = backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, expr)
-#     backtest_results.append(result)
-
+# 使用 joblib 平行处理回测
+backtest_results = Parallel(n_jobs=-1)(delayed(run_single_backtest)(buy_expr, sell_expr) for buy_expr, sell_expr in expression_combinations)
 
 # 根据资产价值排序结果
 backtest_results.sort(key=lambda x: x[0], reverse=True)
@@ -96,4 +94,4 @@ for value, expr, sharpe, drawdown in top_3_results:
     # backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, expr, True)
 
 end_time = time.time()
-print(f"执行时间：{end_time - start_time} 秒")
+print(f"執行時間：{end_time - start_time} 秒")

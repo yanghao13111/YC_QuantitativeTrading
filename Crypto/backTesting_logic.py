@@ -25,7 +25,10 @@ def generate_expressions(conditions, combined_number):
     return expressions
 
 class MultiStrategy(bt.Strategy):
-    params = (('expression', ''),)  # 添加一个参数用于接收买入条件表达式
+    params = (
+        ('buy_expression', ''),  # 添加一个参数用于接收买入条件表达式
+        ('sell_expression', ''), # 添加一个参数用于接收卖出条件表达式
+    )
 
     def __init__(self):
         self.order = None
@@ -52,16 +55,16 @@ class MultiStrategy(bt.Strategy):
             self.cancel(self.order)
 
         # 使用 eval 来计算动态生成的布尔表达式
-        if not self.position and eval(self.params.expression):
+        if not self.position and eval(self.params.buy_expression):
             self.order = self.buy()
 
         # 出场条件需要根据您的策略来定义
-        elif self.position and not eval(self.params.expression):  # 这里的条件需要根据实际策略进行调整
+        elif self.position and eval(self.params.sell_expression):  
             self.order = self.close()
 
-def run_backtest(data_file, from_date, to_date, expression, plot=False):
+def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression, plot=False):
     cerebro = bt.Cerebro()
-    cerebro.addstrategy(MultiStrategy, expression=expression)
+    cerebro.addstrategy(MultiStrategy, buy_expression=buy_expression, sell_expression=sell_expression)
 
     data = bt.feeds.GenericCSVData(
         dataname=data_file,
@@ -96,4 +99,4 @@ def run_backtest(data_file, from_date, to_date, expression, plot=False):
     if plot:
         cerebro.plot()
     else:
-        return final_value, expression, sharpe_ratio, max_drawdown
+        return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
