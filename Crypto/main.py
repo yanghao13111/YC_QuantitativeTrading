@@ -5,36 +5,15 @@ from datetime import datetime, timedelta
 import time
 from joblib import Parallel, delayed
 import itertools
+import indicators
 
 # 參數設置#######################################
 symbol = 'BTC/USDT'
 timeframe = '1h'
-# indicators expression
-# ma
-A = "self.data.close[0] > self.sma5[0]"
-B = "self.data.close[0] > self.sma10[0]"
-C = "self.data.close[0] > self.sma20[0]"
-D = "self.data.close[0] > self.sma60[0]"
-E = "self.data.close[0] > self.sma120[0]"
-F = "self.data.close[0] > self.sma240[0]" 
-G = "self.data.close[0] < self.sma5[0]"
-H = "self.data.close[0] < self.sma10[0]" 
-I = "self.data.close[0] < self.sma20[0]"
-J = "self.data.close[0] < self.sma60[0]"
-K = "self.data.close[0] < self.sma120[0]"
-L = "self.data.close[0] < self.sma240[0]"
-# macd
-M = "self.macd.macd[0] > self.macd.signal[0]"
-N = "self.macd.macd[0] < self.macd.signal[0]"
-# rsi
-O = "self.rsi[0] > 70"
-P = "self.rsi[0] < 30"
-# stoch
-Q = "self.stoch[0] > 80"
-R = "self.stoch[0] < 20"
+
 # Maximum is 9
-buy_pool = [A, B, C, M, O]
-sell_pool = [A, B, C, M, O]
+buy_pool = [indicators.A, indicators.B, indicators.C, indicators.M, indicators.O]
+sell_pool = [indicators.G, indicators.H, indicators.I, indicators.N, indicators.P]
 # Approximately equal to conditions/2
 buy_combined = 1
 sell_combined = 1
