@@ -51,8 +51,8 @@ class MultiStrategy(bt.Strategy):
         self.stoch = bt.indicators.Stochastic(self.data)
 
     def next(self):
-        if self.order:
-            self.cancel(self.order)
+        if self.order and self.order.status in [bt.Order.Submitted, bt.Order.Accepted]:
+            return
 
         # 使用 eval 来计算动态生成的布尔表达式
         if not self.position and eval(self.params.buy_expression):
@@ -78,7 +78,9 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
         low=3,
         close=4,
         volume=5,
-        openinterest=-1
+        openinterest=-1,
+        timeframe=bt.TimeFrame.Minutes,
+        compression=60
     )
 
     cerebro.adddata(data)

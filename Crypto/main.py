@@ -12,14 +12,14 @@ symbol = 'ETH/USDT'
 timeframe = '1h'
 
 # Maximum is 9
-buy_pool = [indicators.A, indicators.B, indicators.C, indicators.M, indicators.O]
-sell_pool = [indicators.G, indicators.H, indicators.I, indicators.N, indicators.P]
+buy_pool = [indicators.A]
+sell_pool = [indicators.G]
 # Approximately equal to conditions/2
 buy_combined = 2
-sell_combined = 3
+sell_combined = 2
 ##############################################
 
-month = 4
+month = 6
 # 训练数据时间范围: 一年前到半年前
 train_start_date = datetime.utcnow() - timedelta(days=month*30)
 train_end_date = datetime.utcnow() - timedelta(days=(month-1)*30 + 1)
