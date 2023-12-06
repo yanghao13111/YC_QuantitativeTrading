@@ -8,70 +8,70 @@ from tqdm import tqdm
 import itertools
 import indicators
 
-# 參數設置#######################################
-symbol = 'ETH/USDT'
-timeframe = '1h'
+MONTH = 4
 
-# Maximum is 9
-buy_pool = [indicators.B, indicators.C, indicators.E, indicators.F, indicators.H, indicators.I, indicators.K, indicators.L]
-sell_pool = [indicators.B, indicators.C, indicators.E, indicators.F, indicators.H, indicators.I, indicators.K, indicators.L]
-# Approximately equal to conditions/2
-buy_combined = 2
-sell_combined = 2
-##############################################
+def get_dates(months_back):
+    current_time = datetime.utcnow()
+    start_date = current_time - timedelta(days=months_back * 30 + 20)
+    end_date = current_time - timedelta(days=(months_back - 1) * 30 + 1)
+    return start_date, end_date
 
-month = 5
-# 训练数据时间范围: 一年前到半年前
-train_start_date = datetime.utcnow() - timedelta(days=month*30 + 20)
-train_end_date = datetime.utcnow() - timedelta(days=(month-1)*30 + 1)
+def collect_and_save_data(symbol, timeframe, start_date, end_date, filename):
+    df = data_collection.collect_data(symbol, timeframe, start_date, end_date)
+    df.to_csv(filename, index=False)
+    return filename
 
-# 验证数据时间范围: 半年前到现在
-validation_start_date = datetime.utcnow() - timedelta(days=(month-1)*30 + 20)
-validation_end_date = datetime.utcnow() - timedelta(days=(month-2)*30 + 1)
+def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_file, train_start, train_end):
+    buy_expression = backTesting_logic.generate_expressions(buy_pool, buy_combined)
+    sell_expression = backTesting_logic.generate_expressions(sell_pool, sell_combined)
+    expression_combinations = list(itertools.product(buy_expression, sell_expression))
+    tasks = tqdm(expression_combinations)
 
-# 訓練數據搜集
-df_train = data_collection.collect_data(symbol, timeframe, train_start_date, train_end_date)
-df_train.to_csv('Crypto/train_data.csv', index=False)
+    backtest_results = Parallel(n_jobs=-1)(
+        delayed(run_single_backtest)(train_file, train_start, train_end, buy_expr, sell_expr) 
+        for buy_expr, sell_expr in tasks
+    )
 
-# 驗證數據搜集
-df_validation = data_collection.collect_data(symbol, timeframe, validation_start_date, validation_end_date)
-df_validation.to_csv('Crypto/validation_data.csv', index=False)
+    backtest_results.sort(key=lambda x: x[0], reverse=True)
+    return backtest_results[:3]
 
-start_time = time.time()
-buy_expression = backTesting_logic.generate_expressions(buy_pool, buy_combined)
-sell_expression = backTesting_logic.generate_expressions(sell_pool, sell_combined)
+def run_single_backtest(data_file, start_date, end_date, buy_expr, sell_expr):
+    return backTesting_logic.run_backtest(data_file, start_date, end_date, buy_expr, sell_expr)
 
-# 使用 joblib 平行處理回測
-def run_single_backtest(buy_expr, sell_expr):
-    return backTesting_logic.run_backtest('Crypto/train_data.csv', train_start_date, train_end_date, buy_expr, sell_expr)
+def main():
+    config = {
+        'symbol': 'ETH/USDT',
+        'timeframe': '1h',
+        'buy_pool': [indicators.H, indicators.I, indicators.K, indicators.L],
+        'sell_pool': [indicators.H, indicators.I, indicators.K, indicators.L],
+        'buy_combined': 2,
+        'sell_combined': 2,
+    }
 
-# 生成所有可能的买入和卖出表达式组合
-expression_combinations = list(itertools.product(buy_expression, sell_expression))
-# tqdm包装表达式组合
-tasks = tqdm(expression_combinations)
+    train_start, train_end = get_dates(MONTH)
+    validation_start, validation_end = get_dates(MONTH-1)
 
-# 使用 joblib 平行处理回测
-backtest_results = Parallel(n_jobs=-1)(delayed(run_single_backtest)(buy_expr, sell_expr) for buy_expr, sell_expr in tasks)
+    train_file = collect_and_save_data(config['symbol'], config['timeframe'], train_start, train_end, 'Crypto/train_data.csv')
+    validation_file = collect_and_save_data(config['symbol'], config['timeframe'], validation_start, validation_end, 'Crypto/validation_data.csv')
 
-# 根据资产价值排序结果
-backtest_results.sort(key=lambda x: x[0], reverse=True)
+    start_time = time.time()
+    top_3_results = run_backtests(config['buy_pool'], config['sell_pool'], config['buy_combined'], config['sell_combined'], train_file, train_start, train_end)
 
-# 选取前三个结果
-top_3_results = backtest_results[:3]
-end_time = time.time()
+    for result in top_3_results:
+        value, buy_expression, sell_expression, sharpe, drawdown = result
+        print(f"買入策略組合: {buy_expression}, 賣出策略組合: {sell_expression}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
+        backTesting_logic.run_backtest(train_file, train_start, train_end, buy_expression, sell_expression, True)
 
-for value, buy_expression, sell_expression, sharpe, drawdown in top_3_results:
-    print(f"買入策略組合: {buy_expression}, 賣出策略組合: {sell_expression}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
-    # 重新运行回测以绘制图表
-    backTesting_logic.run_backtest('Crypto/train_data.csv', train_start_date, train_end_date, buy_expression, sell_expression, True)
+    print('-------------------------------------------------------------------------------')
 
-print('-------------------------------------------------------------------------------')
+    for result in top_3_results:
+        value, buy_expression, sell_expression, sharpe, drawdown = result
+        val_result = backTesting_logic.run_backtest(validation_file, validation_start, validation_end, buy_expression, sell_expression, True)
+        val_value, val_buy_expression, val_sell_expression, val_sharpe, val_drawdown = val_result
+        print(f"買入策略組合: {val_buy_expression}, 賣出策略組合: {val_sell_expression}, 淨收益: {val_value}, sharpe: {val_sharpe}, MDD: {val_drawdown}")
 
-for value, buy_expression, sell_expression, sharpe, drawdown in top_3_results:
+    end_time = time.time()
+    print(f"執行時間：{end_time - start_time} 秒")
 
-    # 在验证数据集上运行相同的策略
-    val_result = backTesting_logic.run_backtest('Crypto/validation_data.csv', validation_start_date, validation_end_date, buy_expression, sell_expression, True)
-    val_value, val_buy_expression, val_sell_expression, val_sharpe, val_drawdown = val_result
-    print(f"買入策略組合: {val_buy_expression}, 賣出策略組合: {val_sell_expression}, 淨收益: {val_value}, sharpe: {val_sharpe}, MDD: {val_drawdown}")
-
-print(f"執行時間：{end_time - start_time} 秒")
+if __name__ == "__main__":
+    main()
