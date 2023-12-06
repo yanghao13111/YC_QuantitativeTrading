@@ -30,9 +30,9 @@ kd_d = "self.k[0] < self.d[0] and self.k[0] > 80 and self.d > 80" # 死叉，賣
 rsi_b = "self.rsi[0] < 30"  # 超賣，買進
 rsi_s = "self.rsi[0] > 70"  # 超買，賣出
 
-# DMI
-dmi_pdi = "self.dmi.pdi[0] > self.dmi.mdi[0] and self.dmi.adx[0] > 20" # 多頭，買進
-dmi_mdi = "self.dmi.pdi[0] < self.dmi.mdi[0] and self.dmi.adx[0] > 20" # 空頭，賣出
+# DMI (ADX)
+dmi_pdi = "self.dmi.plusDI[0] > self.dmi.minusDI[0] and self.dmi.adx[0] > 20" # 多頭，買進
+dmi_mdi = "self.dmi.plusDI[0] < self.dmi.minusDI[0] and self.dmi.adx[0] > 20" # 空頭，賣出
 
 # BBI
 BBI_h = "self.data.close[0] > (self.sma5[0]+self.sma10[0]+self.sma20[0]+self.sma60[0])/4"

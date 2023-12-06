@@ -42,8 +42,8 @@ def main():
     config = {
         'symbol': 'ETH/USDT',
         'timeframe': '1h',
-        'buy_pool': [indicators.H, indicators.I, indicators.K, indicators.L],
-        'sell_pool': [indicators.H, indicators.I, indicators.K, indicators.L],
+        'buy_pool': [indicators.ema5_h, indicators.ema10_h, indicators.macd_g, indicators.kdj_b, indicators.rsi_b, indicators.dmi_pdi, indicators.BBI_h],
+        'sell_pool': [indicators.ema5_h, indicators.ema10_h, indicators.macd_d, indicators.kdj_s, indicators.rsi_s, indicators.dmi_mdi, indicators.BBI_l],
         'buy_combined': 2,
         'sell_combined': 2,
     }

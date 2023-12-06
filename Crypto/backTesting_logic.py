@@ -37,6 +37,7 @@ class MultiStrategy(bt.Strategy):
         self.sma5 = bt.ind.SMA(self.data.close, period=5)
         self.sma10 = bt.ind.SMA(self.data.close, period=10)
         self.sma20 = bt.ind.SMA(self.data.close, period=20)
+        self.sma60 = bt.ind.SMA(self.data.close, period=60)
 
         # EMA 指标
         self.ema5 = bt.ind.EMA(self.data.close, period=5)
@@ -57,6 +58,8 @@ class MultiStrategy(bt.Strategy):
         
         # DMI 指标
         self.dmi = bt.indicators.DMI(self.data, period=14)
+        self.plusDI = self.dmi.plusDI  # 正確的屬性名稱
+        self.minusDI = self.dmi.minusDI
 
     def next(self):
         if self.order and self.order.status in [bt.Order.Submitted, bt.Order.Accepted]:
