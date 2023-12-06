@@ -53,14 +53,24 @@ class MultiStrategy(bt.Strategy):
     def next(self):
         if self.order and self.order.status in [bt.Order.Submitted, bt.Order.Accepted]:
             return
+        
+        # 当前没有持仓
+        if not self.position:
+            if eval(self.params.buy_expression):
+                self.order = self.buy()  # 做多
+            elif eval(self.params.sell_expression):
+                self.order = self.sell()  # 做空
 
-        # 使用 eval 来计算动态生成的布尔表达式
-        if not self.position and eval(self.params.buy_expression):
-            self.order = self.buy()
+        # 当前持有做多仓位
+        elif self.position.size > 0:
+            if eval(self.params.sell_expression):
+                self.order = self.close()  # 平掉做多仓位
 
-        # 出场条件需要根据您的策略来定义
-        elif self.position and eval(self.params.sell_expression):  
-            self.order = self.close()
+        # 当前持有做空仓位
+        elif self.position.size < 0:
+            if eval(self.params.buy_expression):
+                self.order = self.close()  # 平掉做空仓位
+
 
 def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression, plot=False):
     cerebro = bt.Cerebro()
