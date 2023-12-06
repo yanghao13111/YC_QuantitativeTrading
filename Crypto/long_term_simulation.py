@@ -41,8 +41,8 @@ def long_term_simulation():
     config = {
         'symbol': 'ETH/USDT',
         'timeframe': '1h',
-        'buy_pool': [indicators.H, indicators.I, indicators.K, indicators.L],
-        'sell_pool': [indicators.H, indicators.I, indicators.K, indicators.L],
+        'buy_pool': [indicators.ema5_h, indicators.ema10_h, indicators.macd_g, indicators.kdj_b, indicators.rsi_b, indicators.dmi_pdi, indicators.BBI_h],
+        'sell_pool': [indicators.ema5_h, indicators.ema10_h, indicators.macd_d, indicators.kdj_s, indicators.rsi_s, indicators.dmi_mdi, indicators.BBI_l],
         'buy_combined': 2,
         'sell_combined': 2,
     }
@@ -50,7 +50,7 @@ def long_term_simulation():
     # 用于存储每个月的净收益
     monthly_profits = []
 
-    for month in range(12, 2, -1):
+    for month in range(12, 1, -1):
         print(f"------ Starting Simulation for {month} Months Back ------")
         train_start, train_end = get_dates(month + 1)
         validation_start, validation_end = get_dates(month)
@@ -73,7 +73,7 @@ def long_term_simulation():
         print(f"------ End of Simulation for {month} Months Back ------\n")
 
     # 绘制柱状图
-    months = list(range(2, 1, -1))
+    months = list(range(12, 1, -1))
     plt.bar(months, monthly_profits)
     plt.xlabel('Months Back')
     plt.ylabel('Net Profit')
