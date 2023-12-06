@@ -37,9 +37,9 @@ class MultiStrategy(bt.Strategy):
         self.sma5 = bt.indicators.SimpleMovingAverage(self.data.close, period=5)
         self.sma10 = bt.indicators.SimpleMovingAverage(self.data.close, period=10)
         self.sma20 = bt.indicators.SimpleMovingAverage(self.data.close, period=20)
-        self.sma60 = bt.indicators.SimpleMovingAverage(self.data.close, period=60)
-        self.sma120 = bt.indicators.SimpleMovingAverage(self.data.close, period=120)
-        self.sma240 = bt.indicators.SimpleMovingAverage(self.data.close, period=240)
+        # self.sma60 = bt.indicators.SimpleMovingAverage(self.data.close, period=60)
+        # self.sma120 = bt.indicators.SimpleMovingAverage(self.data.close, period=120)
+        # self.sma240 = bt.indicators.SimpleMovingAverage(self.data.close, period=240)
 
         # MACD 指标
         self.macd = bt.indicators.MACD(self.data.close)
@@ -109,6 +109,12 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
     max_drawdown = results[0].analyzers.drawdown.get_analysis()['max']['drawdown']
 
     if plot:
-        cerebro.plot(style='candlestick')
+        cerebro.plot(
+            start=20, 
+            style='candlestick', 
+            barup='red', 
+            bardown='green', 
+        )
+        return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
     else:
         return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown

@@ -4,6 +4,7 @@ import backTesting_logic
 from datetime import datetime, timedelta
 import time
 from joblib import Parallel, delayed
+from tqdm import tqdm
 import itertools
 import indicators
 
@@ -21,11 +22,11 @@ sell_combined = 3
 
 month = 5
 # 训练数据时间范围: 一年前到半年前
-train_start_date = datetime.utcnow() - timedelta(days=month*30)
+train_start_date = datetime.utcnow() - timedelta(days=month*30 + 20)
 train_end_date = datetime.utcnow() - timedelta(days=(month-1)*30 + 1)
 
 # 验证数据时间范围: 半年前到现在
-validation_start_date = datetime.utcnow() - timedelta(days=(month-1)*30)
+validation_start_date = datetime.utcnow() - timedelta(days=(month-1)*30 + 20)
 validation_end_date = datetime.utcnow() - timedelta(days=(month-2)*30 + 1)
 
 # 訓練數據搜集
@@ -46,9 +47,11 @@ def run_single_backtest(buy_expr, sell_expr):
 
 # 生成所有可能的买入和卖出表达式组合
 expression_combinations = list(itertools.product(buy_expression, sell_expression))
+# tqdm包装表达式组合
+tasks = tqdm(expression_combinations)
 
 # 使用 joblib 平行处理回测
-backtest_results = Parallel(n_jobs=-1)(delayed(run_single_backtest)(buy_expr, sell_expr) for buy_expr, sell_expr in expression_combinations)
+backtest_results = Parallel(n_jobs=-1)(delayed(run_single_backtest)(buy_expr, sell_expr) for buy_expr, sell_expr in tasks)
 
 # 根据资产价值排序结果
 backtest_results.sort(key=lambda x: x[0], reverse=True)
@@ -59,7 +62,6 @@ end_time = time.time()
 
 for value, buy_expression, sell_expression, sharpe, drawdown in top_3_results:
     print(f"買入策略組合: {buy_expression}, 賣出策略組合: {sell_expression}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
-
     # 重新运行回测以绘制图表
     backTesting_logic.run_backtest('Crypto/train_data.csv', train_start_date, train_end_date, buy_expression, sell_expression, True)
 
@@ -68,10 +70,8 @@ print('-------------------------------------------------------------------------
 for value, buy_expression, sell_expression, sharpe, drawdown in top_3_results:
 
     # 在验证数据集上运行相同的策略
-    val_result = backTesting_logic.run_backtest('Crypto/validation_data.csv', validation_start_date, validation_end_date, buy_expression, sell_expression)
+    val_result = backTesting_logic.run_backtest('Crypto/validation_data.csv', validation_start_date, validation_end_date, buy_expression, sell_expression, True)
     val_value, val_buy_expression, val_sell_expression, val_sharpe, val_drawdown = val_result
-
     print(f"買入策略組合: {val_buy_expression}, 賣出策略組合: {val_sell_expression}, 淨收益: {val_value}, sharpe: {val_sharpe}, MDD: {val_drawdown}")
-    backTesting_logic.run_backtest('Crypto/validation_data.csv', validation_start_date, validation_end_date, buy_expression, sell_expression, True)
 
 print(f"執行時間：{end_time - start_time} 秒")
