@@ -31,10 +31,10 @@ Y = False
 Z = True
 
 # 设置最多要取的条件数
-buy_pool_number = 5
-sell_pool_number = 5
-buy_combined = 3
-sell_combined = 3
+buy_pool_number = 8
+sell_pool_number = 8
+buy_combined = 2
+sell_combined = 2
 
 # 定义一个函数来生成所有条件的组合，根据 combined_number 参数确定组合的最大长度
 def generate_expressions(conditions, combined_number):

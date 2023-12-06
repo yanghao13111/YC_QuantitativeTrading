@@ -13,11 +13,11 @@ symbol = 'ETH/USDT'
 timeframe = '1h'
 
 # Maximum is 9
-buy_pool = [indicators.B, indicators.C, indicators.I, indicators.M, indicators.N]
-sell_pool = [indicators.B, indicators.C, indicators.I, indicators.M, indicators.N]
+buy_pool = [indicators.B, indicators.C, indicators.E, indicators.F, indicators.H, indicators.I, indicators.K, indicators.L]
+sell_pool = [indicators.B, indicators.C, indicators.E, indicators.F, indicators.H, indicators.I, indicators.K, indicators.L]
 # Approximately equal to conditions/2
-buy_combined = 3
-sell_combined = 3
+buy_combined = 2
+sell_combined = 2
 ##############################################
 
 month = 5
