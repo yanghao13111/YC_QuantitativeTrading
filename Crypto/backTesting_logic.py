@@ -38,19 +38,25 @@ class MultiStrategy(bt.Strategy):
         self.sma10 = bt.ind.SMA(self.data.close, period=10)
         self.sma20 = bt.ind.SMA(self.data.close, period=20)
 
-        #
+        # EMA 指标
         self.ema5 = bt.ind.EMA(self.data.close, period=5)
         self.ema10 = bt.ind.EMA(self.data.close, period=10)
         self.ema20 = bt.ind.EMA(self.data.close, period=20)
 
-        # # MACD 指标
-        # self.macd = bt.indicators.MACD(self.data.close)
+        # MACD 指标
+        self.macd = bt.indicators.MACD(self.data.close)
+
+        # KDJ 指標
+        self.stochastic = bt.indicators.Stochastic(self.data)
+        self.k = self.stochastic.percK
+        self.d = self.stochastic.percD
+        self.j = 3 * self.k - 2 * self.d  # J線計算公式
         
-        # # RSI 指标
-        # self.rsi = bt.indicators.RSI(self.data.close)
+        # RSI 指标
+        self.rsi = bt.indicators.RSI(self.data.close, period=14)
         
-        # # Stochastic 指标
-        # self.stoch = bt.indicators.Stochastic(self.data)
+        # DMI 指标
+        self.dmi = bt.indicators.DMI(self.data, period=14)
 
     def next(self):
         if self.order and self.order.status in [bt.Order.Submitted, bt.Order.Accepted]:
