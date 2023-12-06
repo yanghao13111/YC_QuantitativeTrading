@@ -2,6 +2,8 @@ import backtrader as bt
 from itertools import combinations, product
 from datetime import datetime
 import backtrader.analyzers as btanalyzers
+from backtrader_plotting import Bokeh
+from backtrader_plotting.schemes import Tradimo
 
 # 定义一个函数来生成所有条件的组合
 def generate_expressions(conditions, combined_number):
@@ -74,7 +76,7 @@ class MultiStrategy(bt.Strategy):
                 self.order = self.close()  # 平掉做空仓位
 
 
-def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression, plot=False):
+def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression, plot=False, plot_path=None):
     cerebro = bt.Cerebro()
     cerebro.addstrategy(MultiStrategy, buy_expression=buy_expression, sell_expression=sell_expression)
 
@@ -111,12 +113,17 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
     max_drawdown = results[0].analyzers.drawdown.get_analysis()['max']['drawdown']
 
     if plot:
-        cerebro.plot(
-            start=20, 
-            style='candlestick', 
-            barup='red', 
-            bardown='green', 
-        )
+        if plot_path:
+            # 使用 Bokeh 绘图并保存到文件
+            b = Bokeh(style='bar', plot_mode='single', scheme=Tradimo(), output_mode='show')
+            cerebro.plot(b)
+        else:
+            # 显示图表
+            cerebro.plot(
+                style='candlestick', 
+                barup='red', 
+                bardown='green',
+            )
         return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
     else:
         return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
