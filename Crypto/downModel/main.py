@@ -55,7 +55,8 @@ def main():
 
     print('------------------------------Sort by value-------------------------------------------------')
 
-    top_3_results = results.sort(key=lambda x: x[0], reverse=True)[:3]
+    results.sort(key=lambda x: x[0], reverse=True)
+    top_3_results = results[:3]
 
     for result in top_3_results:
         value, buy_expression, sell_expression, sharpe, drawdown = result
@@ -64,12 +65,13 @@ def main():
 
     print('------------------------------Sort by sharpe-------------------------------------------------')
 
-    top_3_results = results.sort(key=lambda x: x[3] if x[3] is not None else 0, reverse=True)[:3]
+    results.sort(key=lambda x: x[3] if x[3] is not None else 0, reverse=True)
+    top_3_results = results[:3]
 
     for result in top_3_results:
         value, buy_expression, sell_expression, sharpe, drawdown = result
         print(f"買入策略組合: {buy_expression}, 賣出策略組合: {sell_expression}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
-        backTesting_logic.run_backtest(train_file, train_start, train_end, buy_expression, sell_expression, True)
+        backTesting_logic.run_backtest(train_file, train_start, train_end, buy_expression, sell_expression)
 
     end_time = time.time()
     print(f"執行時間：{end_time - start_time} 秒")
