@@ -1,6 +1,6 @@
 # main.py
 import data_collection
-import Crypto.tools.backTesting_logic as backTesting_logic
+import backTesting_logic
 from datetime import datetime, timedelta
 import time
 from joblib import Parallel, delayed
