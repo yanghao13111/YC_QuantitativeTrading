@@ -2,8 +2,7 @@ import backtrader as bt
 from itertools import combinations, product
 from datetime import datetime
 import backtrader.analyzers as btanalyzers
-from backtrader_plotting import Bokeh
-from backtrader_plotting.schemes import Tradimo
+
 
 # 定义一个函数来生成所有条件的组合
 def generate_expressions(conditions, combined_number):
@@ -28,12 +27,15 @@ def generate_expressions(conditions, combined_number):
 
 class MultiStrategy(bt.Strategy):
     params = (
-        ('buy_expression', ''),  # 添加一个参数用于接收买入条件表达式
-        ('sell_expression', ''), # 添加一个参数用于接收卖出条件表达式
+        ('stop_loss_percent', 3),  # 設定停損百分比
+        # 買入和賣出表達式參數
+        ('buy_expression', ''),
+        ('sell_expression', ''),
     )
 
     def __init__(self):
         self.order = None
+        self.entry_price = None
 
         # SMA 指标
         self.sma5 = bt.ind.SMA(self.data.close, period=5)
@@ -64,25 +66,36 @@ class MultiStrategy(bt.Strategy):
         self.minusDI = self.dmi.minusDI
 
     def next(self):
+
         if self.order and self.order.status in [bt.Order.Submitted, bt.Order.Accepted]:
             return
-        
+
         # 当前没有持仓
         if not self.position:
             if eval(self.params.buy_expression):
                 self.order = self.buy()  # 做多
+                self.entry_price = self.data.close[0]  # 記錄進場價格
             elif eval(self.params.sell_expression):
                 self.order = self.sell()  # 做空
+                self.entry_price = self.data.close[0]  # 記錄進場價格
 
         # 当前持有做多仓位
         elif self.position.size > 0:
+            # 檢查是否應該平倉
             if eval(self.params.sell_expression):
                 self.order = self.close()  # 平掉做多仓位
+            # 檢查是否觸發停損
+            # elif self.data.close[0] < self.entry_price * (1 - self.params.stop_loss_percent / 100):
+            #     self.order = self.close()  # 觸發停損平倉
 
         # 当前持有做空仓位
         elif self.position.size < 0:
+            # 檢查是否應該平倉
             if eval(self.params.buy_expression):
                 self.order = self.close()  # 平掉做空仓位
+            # 檢查是否觸發停損
+            # elif self.data.close[0] > self.entry_price * (1 + self.params.stop_loss_percent / 100):
+            #     self.order = self.close()  # 觸發停損平倉
 
 
 def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression, plot=False, plot_path=None):
@@ -122,17 +135,15 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
     max_drawdown = results[0].analyzers.drawdown.get_analysis()['max']['drawdown']
 
     if plot:
-        if plot_path:
-            # 使用 Bokeh 绘图并保存到文件
-            b = Bokeh(style='bar', plot_mode='single', scheme=Tradimo(), output_mode='show')
-            cerebro.plot(b)
-        else:
-            # 显示图表
-            cerebro.plot(
-                style='candlestick', 
-                barup='red', 
-                bardown='green',
-            )
+        # 显示图表
+        img = cerebro.plot(
+            style='candlestick', 
+            barup='red', 
+            bardown='green',
+            start=3
+        )
+        # filename = f'{from_date}.png'
+        # img[0][0].savefig(filename)
         return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
     else:
         return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown

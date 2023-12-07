@@ -1,48 +1,16 @@
 # long_term_simulation.py
-import data_collection
 import matplotlib.pyplot as plt
 import backTesting_logic
-from datetime import datetime, timedelta
 import time
-from joblib import Parallel, delayed
-from tqdm import tqdm
-import itertools
 import indicators
-
-def get_dates(months_back):
-    current_time = datetime.utcnow()
-    start_date = current_time - timedelta(days=months_back * 30 + 20)
-    end_date = current_time - timedelta(days=(months_back - 1) * 30 + 1)
-    return start_date, end_date
-
-def collect_and_save_data(symbol, timeframe, start_date, end_date, filename):
-    df = data_collection.collect_data(symbol, timeframe, start_date, end_date)
-    df.to_csv(filename, index=False)
-    return filename
-
-def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_file, train_start, train_end):
-    buy_expression = backTesting_logic.generate_expressions(buy_pool, buy_combined)
-    sell_expression = backTesting_logic.generate_expressions(sell_pool, sell_combined)
-    expression_combinations = list(itertools.product(buy_expression, sell_expression))
-    tasks = tqdm(expression_combinations)
-
-    backtest_results = Parallel(n_jobs=-1)(
-        delayed(run_single_backtest)(train_file, train_start, train_end, buy_expr, sell_expr) 
-        for buy_expr, sell_expr in tasks
-    )
-
-    backtest_results.sort(key=lambda x: x[0], reverse=True)
-    return backtest_results[:1]
-
-def run_single_backtest(data_file, start_date, end_date, buy_expr, sell_expr):
-    return backTesting_logic.run_backtest(data_file, start_date, end_date, buy_expr, sell_expr)
+import main
 
 def long_term_simulation():
     config = {
-        'symbol': 'ETH/USDT',
+        'symbol': 'BTC/USDT',
         'timeframe': '1h',
-        'buy_pool': [indicators.ema5_h, indicators.ema10_h, indicators.macd_g, indicators.kdj_b, indicators.rsi_b, indicators.dmi_pdi, indicators.BBI_h],
-        'sell_pool': [indicators.ema5_h, indicators.ema10_h, indicators.macd_d, indicators.kdj_s, indicators.rsi_s, indicators.dmi_mdi, indicators.BBI_l],
+        'buy_pool': [indicators.ema5_h, indicators.ema20_h, indicators.ema10_l, indicators.macd_g, indicators.macd_d, indicators.kd_g, indicators.kd_g],
+        'sell_pool': [indicators.ema5_h, indicators.ema20_h, indicators.ema10_l, indicators.macd_g, indicators.macd_d, indicators.kd_g, indicators.kd_g],
         'buy_combined': 2,
         'sell_combined': 2,
     }
@@ -50,16 +18,20 @@ def long_term_simulation():
     # 用于存储每个月的净收益
     monthly_profits = []
 
-    for month in range(12, 1, -1):
+    for month in range(6, 0, -1):
         print(f"------ Starting Simulation for {month} Months Back ------")
-        train_start, train_end = get_dates(month + 1)
-        validation_start, validation_end = get_dates(month)
+        train_start, train_end = main.get_dates(month + 1)
+        validation_start, validation_end = main.get_dates(month)
 
-        train_file = collect_and_save_data(config['symbol'], config['timeframe'], train_start, train_end, f'Crypto/Simulation/train_data_{month}.csv')
-        validation_file = collect_and_save_data(config['symbol'], config['timeframe'], validation_start, validation_end, f'Crypto/Simulation/validation_data_{month}.csv')
+        train_file = main.collect_and_save_data(config['symbol'], config['timeframe'], train_start, train_end, f'Crypto/Simulation/train_data_{month}.csv')
+        validation_file = main.collect_and_save_data(config['symbol'], config['timeframe'], validation_start, validation_end, f'Crypto/Simulation/validation_data_{month}.csv')
+
+        # train_file = f'Crypto/Simulation/train_data_{month}.csv'
+        # validation_file = f'Crypto/Simulation/validation_data_{month}.csv'
 
         start_time = time.time()
-        top_results = run_backtests(config['buy_pool'], config['sell_pool'], config['buy_combined'], config['sell_combined'], train_file, train_start, train_end)
+        top_results = main.run_backtests(config['buy_pool'], config['sell_pool'], config['buy_combined'], config['sell_combined'], train_file, train_start, train_end)
+        top_results = top_results[:1]
 
         for result in top_results:
             value, buy_expression, sell_expression, sharpe, drawdown = result
@@ -73,7 +45,7 @@ def long_term_simulation():
         print(f"------ End of Simulation for {month} Months Back ------\n")
 
     # 绘制柱状图
-    months = list(range(12, 1, -1))
+    months = list(range(6, 0, -1))
     plt.bar(months, monthly_profits)
     plt.xlabel('Months Back')
     plt.ylabel('Net Profit')

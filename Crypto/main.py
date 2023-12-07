@@ -8,11 +8,11 @@ from tqdm import tqdm
 import itertools
 import indicators
 
-MONTH = 10
+MONTH = 11
 
 def get_dates(months_back):
     current_time = datetime.utcnow()
-    start_date = current_time - timedelta(days=months_back * 30 + 20)
+    start_date = current_time - timedelta(days=months_back * 30 + 3)
     end_date = current_time - timedelta(days=(months_back - 1) * 30 + 1)
     return start_date, end_date
 
@@ -40,7 +40,7 @@ def run_single_backtest(data_file, start_date, end_date, buy_expr, sell_expr):
 
 def main():
     config = {
-        'symbol': 'ETH/USDT',
+        'symbol': 'BTC/USDT',
         'timeframe': '1h',
         'buy_pool': [indicators.ema5_h, indicators.ema10_h, indicators.macd_g, indicators.kdj_b, indicators.rsi_b, indicators.dmi_pdi, indicators.BBI_h],
         'sell_pool': [indicators.ema5_h, indicators.ema10_h, indicators.macd_d, indicators.kdj_s, indicators.rsi_s, indicators.dmi_mdi, indicators.BBI_l],
