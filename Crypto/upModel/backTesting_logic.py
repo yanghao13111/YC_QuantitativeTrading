@@ -69,15 +69,15 @@ class MultiStrategy(bt.Strategy):
         # 檢查是否有未完成的訂單
         if self.order and self.order.status in [bt.Order.Submitted, bt.Order.Accepted]:
             return
-        
-        # 如果沒有持倉且符合做空條件，則下達做空訂單
-        if not self.position and eval(self.params.sell_expression):
-            self.order = self.sell()  # 做空
+
+        # 沒有持仓時，檢查是否應該買入
+        if not self.position and eval(self.params.buy_expression):
+            self.order = self.buy()  # 做多
             self.entry_price = self.data.close[0]  # 記錄進場價格
 
-        # 如果持有做空倉位且符合平倉條件，則平掉做空倉位
-        elif self.position.size < 0 and eval(self.params.buy_expression):
-            self.order = self.close()  # 平掉做空倉位
+        # 持有做多仓位時，檢查是否應該平倉
+        elif self.position.size > 0 and eval(self.params.sell_expression):
+            self.order = self.close()  # 平掉做多仓位
 
 
 def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression, plot=False, plot_path=None):

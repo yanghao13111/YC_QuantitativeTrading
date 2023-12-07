@@ -1,9 +1,9 @@
 # long_term_simulation.py
 import matplotlib.pyplot as plt
-import backTesting_logic
+import Crypto.tools.backTesting_logic as backTesting_logic
 import time
 import indicators
-import Crypto.tools.main as main
+import main
 
 def long_term_simulation():
     config = {
