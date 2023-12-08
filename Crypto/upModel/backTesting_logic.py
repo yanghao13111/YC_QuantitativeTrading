@@ -47,6 +47,7 @@ class MultiStrategy(bt.Strategy):
         self.ema5 = bt.ind.EMA(self.data.close, period=5)
         self.ema10 = bt.ind.EMA(self.data.close, period=10)
         self.ema20 = bt.ind.EMA(self.data.close, period=20)
+        self.ema60 = bt.ind.EMA(self.data.close, period=60)
 
         # MACD 指标
         self.macd = bt.indicators.MACD(self.data.close)
@@ -66,18 +67,23 @@ class MultiStrategy(bt.Strategy):
         self.minusDI = self.dmi.minusDI
 
     def next(self):
-        # 檢查是否有未完成的訂單
+        # 检查是否有未完成的订单
         if self.order and self.order.status in [bt.Order.Submitted, bt.Order.Accepted]:
             return
 
-        # 沒有持仓時，檢查是否應該買入
+        # 没有持仓时，检查是否应该买入
         if not self.position and eval(self.params.buy_expression):
             self.order = self.buy()  # 做多
-            self.entry_price = self.data.close[0]  # 記錄進場價格
+            self.entry_price = self.data.close[0]  # 记录进场价格
 
-        # 持有做多仓位時，檢查是否應該平倉
-        elif self.position.size > 0 and eval(self.params.sell_expression):
-            self.order = self.close()  # 平掉做多仓位
+        # 持有做多仓位时，检查是否应该平仓或止损
+        elif self.position.size > 0:
+            # 检查是否达到止损条件（跌破进场价格的5%）
+            stop_loss_price = self.entry_price * 0.95
+            if self.data.close[0] <= stop_loss_price:
+                self.order = self.close()  # 平掉做多仓位进行止损
+            elif eval(self.params.sell_expression):
+                self.order = self.close()  # 根据卖出表达式平掉做多仓位
 
 
 def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression, plot=False, plot_path=None):
@@ -107,7 +113,7 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
     cerebro.broker.setcommission(commission=0.0035)
 
     # 添加分析器
-    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio')
+    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio', timeframe=bt.TimeFrame.Minutes, compression=60, riskfreerate=2.28e-6)
     cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
 
 

@@ -107,7 +107,7 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
     cerebro.broker.setcommission(commission=0.0035)
 
     # 添加分析器
-    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio')
+    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio', timeframe=bt.TimeFrame.Minutes, compression=60, riskfreerate=2.28e-6)
     cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
 
 

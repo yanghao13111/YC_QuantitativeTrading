@@ -14,6 +14,15 @@ ema20_h = "self.data.close[0] > self.ema20[0]"
 ema5_l = "self.data.close[0] < self.ema5[0]"
 ema10_l = "self.data.close[0] < self.ema10[0]"
 ema20_l = "self.data.close[0] < self.ema20[0]"
+ema60_l = "self.data.close[0] < self.ema60[0]"
+
+ema_uptrend_5_10 = 'self.ema5[0] > self.ema10[0]'
+ema_uptrend_5_20 = 'self.ema5[0] > self.ema20[0]'
+ema_uptrend_10_20 = 'self.ema10[0] > self.ema20[0]'
+
+ema_downtrend_5_10 = 'self.ema5[0] < self.ema10[0]'
+ema_downtrend_5_20 = 'self.ema5[0] < self.ema20[0]'
+ema_downtrend_10_20 = 'self.ema10[0] < self.ema20[0]'
 
 # MACD
 macd_g = "self.macd.macd[0] > self.macd.signal[0]" # 快線上穿慢線，買進
