@@ -79,7 +79,7 @@ class MultiStrategy(bt.Strategy):
         # 持有做多仓位时，检查是否应该平仓或止损
         elif self.position.size > 0:
             # 检查是否达到止损条件（跌破进场价格的5%）
-            stop_loss_price = self.entry_price * 0.95
+            stop_loss_price = self.entry_price * 0.97
             if self.data.close[0] <= stop_loss_price:
                 self.order = self.close()  # 平掉做多仓位进行止损
             elif eval(self.params.sell_expression):

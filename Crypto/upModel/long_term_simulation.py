@@ -11,8 +11,8 @@ def long_term_simulation():
     config = {
         'symbol': 'BTC/USDT',
         'timeframe': '1h',
-        'buy_expression': 'self.rsi[0] < 30',
-        'sell_expression': 'self.ema10[0] < self.ema20[0] and self.data.close[0] > self.ema20[0] and self.macd.macd[0] < self.macd.signal[0]'
+        'buy_expression': 'self.macd.macd[0] > self.macd.signal[0] and self.rsi[0] < 30',
+        'sell_expression': 'self.macd.macd[0] < self.macd.signal[0] and self.k[0] < self.j[0] and self.d[0] < self.j[0] and self.rsi[0] > 70'
     }
 
     # 用于存储每个月的净收益

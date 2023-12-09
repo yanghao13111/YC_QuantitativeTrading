@@ -40,10 +40,10 @@ def main():
     config = {
         'symbol': 'BTC/USDT',
         'timeframe': '1h',
-        'buy_pool': [indicators.ema_uptrend_5_10, indicators.ema_uptrend_5_20, indicators.ema_uptrend_10_20, indicators.macd_g, indicators.kd_g, indicators.rsi_b],
-        'sell_pool': [indicators.ema_downtrend_5_10, indicators.ema_downtrend_5_20, indicators.ema_downtrend_10_20, indicators.ema20_l, indicators.ema60_l, indicators.macd_d, indicators.kd_d, indicators.kdj_s, indicators.rsi_s, indicators.dmi_mdi, indicators.BBI_l],
-        'buy_combined': 3,
-        'sell_combined': 3,
+        'buy_pool': [indicators.ema_uptrend_5_10, indicators.ema20_l, indicators.ema10_h],
+        'sell_pool': [indicators.ema_downtrend_10_20, indicators.ema60_l, indicators.kdj_b],
+        'buy_combined': 2,
+        'sell_combined': 2,
     }
 
     train_start, train_end = get_dates(MONTH)
