@@ -1,33 +1,38 @@
-import ccxt
+import yfinance as yf
 import pandas as pd
-import pytz
-from datetime import datetime
+
+# 參數設置
+# ticker = "2330.TW"
+# interval = "1h"
+# from_date = "2023-11-01"
+# to_date = "2023-12-04"
 
 def collect_data(symbol, timeframe, start_date, end_date):
-    exchange = ccxt.binance({
-        'rateLimit': 1200,
-        'enableRateLimit': True,
-    })
+    stock = yf.Ticker(symbol)
+    hist_data = stock.history(start=start_date, end=end_date, interval=timeframe)
 
-    limit = 1000  # 每次请求的数据点数上限
-    
-    # 转换为 UTC 时间并格式化为 ISO 8601
-    since = int(start_date.astimezone(pytz.utc).timestamp()) * 1000
-    end = int(end_date.astimezone(pytz.utc).timestamp()) * 1000
+    # 因為 yfinance 已經返回了一個 DataFrame，所以我們直接操作它
+    # 重命名 DataFrame 的索引列名稱為 'Datetime'
+    if isinstance(hist_data.index, pd.DatetimeIndex) and hist_data.index.tz is not None:
+        hist_data.index = hist_data.index.tz_localize(None) 
+    hist_data.reset_index(inplace=True)
+    hist_data.rename(columns={'Date': 'Datetime'}, inplace=True)
 
-    all_data = []
 
-    while since < end:
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, since=since, limit=limit)
-        if not ohlcv:
-            break
-        all_data.extend(ohlcv)
-        since = ohlcv[-1][0] + 1  # 准备下一个请求
-        if len(ohlcv) < limit:
-            break  # 如果返回的数据点少于请求的限制，说明已经到达数据的末尾
+    # 重命名其他列（如果需要）
+    hist_data.rename(columns={
+        'Open': 'Open',
+        'High': 'High',
+        'Low': 'Low',
+        'Close': 'Close',
+        'Volume': 'Volume'
+    }, inplace=True)
 
-    df = pd.DataFrame(all_data, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Asia/Taipei')
-    df['timestamp'] = df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+    # 四捨五入到小數點第一位（如果需要）
+    hist_data = hist_data.round(1)
 
-    return df
+    return hist_data
+
+# df_train = collect_data(ticker,from_date, to_date, interval)
+# print(df_train)
+# df_train.to_csv('Stock/train_data.csv', index=True)

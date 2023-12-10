@@ -4,96 +4,112 @@ import backTesting_logic
 from datetime import datetime, timedelta
 import time
 from joblib import Parallel, delayed
-
-# 參數設置#######################################
-symbol = 'BTC/USDT'
-timeframe = '1h'
-# indicators expression
-# ma
-A = "self.data.close[0] > self.sma5[0]"
-B = "self.data.close[0] > self.sma10[0]"
-C = "self.data.close[0] > self.sma20[0]"
-D = "self.data.close[0] > self.sma60[0]"
-E = "self.data.close[0] > self.sma120[0]"
-F = "self.data.close[0] > self.sma240[0]" 
-G = "self.data.close[0] < self.sma5[0]"
-H = "self.data.close[0] < self.sma10[0]" 
-I = "self.data.close[0] < self.sma20[0]"
-J = "self.data.close[0] < self.sma60[0]"
-K = "self.data.close[0] < self.sma120[0]"
-L = "self.data.close[0] < self.sma240[0]"
-# macd
-M = "self.macd.macd[0] > self.macd.signal[0]"
-N = "self.macd.macd[0] < self.macd.signal[0]"
-# rsi
-O = "self.rsi[0] > 70"
-P = "self.rsi[0] < 30"
-# stoch
-Q = "self.stoch[0] > 80"
-R = "self.stoch[0] < 20"
-# Maximum is 9
-conditions = [A, B, C, D, E]
-# Approximately equal to conditions/2
-combined_number = 3
-##############################################
-
-# 训练数据时间范围: 一年前到半年前
-train_start_date = datetime.utcnow() - timedelta(days=60)
-train_end_date = datetime.utcnow() - timedelta(days=31)
-
-# 验证数据时间范围: 半年前到现在
-validation_start_date = datetime.utcnow() - timedelta(days=30)
-validation_end_date = datetime.utcnow()
-
-# 訓練數據搜集
-df_train = data_collection.collect_data(symbol, timeframe, train_start_date, train_end_date)
-df_train.to_csv('train_data.csv', index=False)
-
-# 驗證數據搜集
-df_validation = data_collection.collect_data(symbol, timeframe, validation_start_date, validation_end_date)
-df_validation.to_csv('validation_data.csv', index=False)
-
-start_time = time.time()
-expressions = backTesting_logic.generate_expressions(conditions, combined_number)
+from tqdm import tqdm
+import itertools
+import indicators
 
 
-# 使用 joblib 平行處理回測
-def run_single_backtest(expr):
-    return backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, expr)
+def get_dates():
+    start_date = datetime(2019, 1, 1)  # 指定年份为2022，月份为1，日期为1
+    end_date = datetime.utcnow()  # 假设结束日期为当前日期
+    return start_date, end_date
 
-backtest_results = Parallel(n_jobs=-1)(delayed(run_single_backtest)(expr) for expr in expressions)
+def collect_and_save_data(symbol, timeframe, start_date, end_date, filename):
+    df = data_collection.collect_data(symbol, timeframe, start_date, end_date)
+    df.to_csv(filename, index=False)
+    return filename
+
+def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_file, train_start, train_end):
+    buy_expression = backTesting_logic.generate_expressions(buy_pool, buy_combined)
+    sell_expression = backTesting_logic.generate_expressions(sell_pool, sell_combined)
+    expression_combinations = list(itertools.product(buy_expression, sell_expression))
+    tasks = tqdm(expression_combinations)
+
+    backtest_results = Parallel(n_jobs=-1)(
+        delayed(run_single_backtest)(train_file, train_start, train_end, buy_expr, sell_expr) 
+        for buy_expr, sell_expr in tasks
+    )
+    return backtest_results
+
+def run_single_backtest(data_file, start_date, end_date, buy_expr, sell_expr):
+    return backTesting_logic.run_backtest(data_file, start_date, end_date, buy_expr, sell_expr)
+
+def main():
+    config = {
+        'symbol': '2376.TW',
+        'timeframe': '1d',  
+        'buy_pool': [indicators.bullish_alignment, indicators.allup, indicators.no_5ma, indicators.is_divergence_less_than_3_percent_5_10, indicators.is_divergence_less_than_3_percent_10_22, indicators.is_divergence_less_than_3_percent_22_66, indicators.volume_indicator],  
+        'sell_pool': [indicators.ema_downtrend_22, indicators.ema_downtrend_10],  
+        'buy_combined': 7,
+        'sell_combined': 2,
+    }
+
+    train_start, train_end = get_dates()
+
+    filename = f'Stock/trainDataSet/{train_start.strftime("%Y-%m-%d")}_{config["symbol"]}.csv'
+    train_file = collect_and_save_data(config['symbol'], config['timeframe'], train_start, train_end, filename)
+
+    start_time = time.time()
+    results = run_backtests(config['buy_pool'], config['sell_pool'], config['buy_combined'], config['sell_combined'], train_file, train_start, train_end)
+
+    print('------------------------------Sort by value-------------------------------------------------')
+
+    results.sort(key=lambda x: x[0], reverse=True)
+
+    # 初始化一個空列表用來儲存前三名的結果
+    top_3_results = []
+    # 用來記錄已選取的值
+    selected_values = set()
+
+    for result in results:
+        if len(top_3_results) >= 3:
+            # 如果已經選取了三個不同的結果，則終止循環
+            break
+
+        value = result[0]
+        if value not in selected_values:
+            # 如果這個值尚未被選取，則將其添加到結果列表和選取值集合中
+            top_3_results.append(result)
+            selected_values.add(value)
+
+    for result in top_3_results:
+        value, buy_expression, sell_expression, sharpe, drawdown = result
+        print(f"買入策略組合: {buy_expression}, \n賣出策略組合: {sell_expression}, \n淨收益: {value}, \nsharpe: {sharpe}, \nMDD: {drawdown}\n")
+        backTesting_logic.run_backtest(train_file, train_start, train_end, buy_expression, sell_expression, True)
 
 
-# # 对每个生成的表达式运行回测
-# backtest_results = []
+    print('------------------------------Sort by sharpe-------------------------------------------------')
 
-# for expr in expressions:
-#     result = backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, expr)
-#     backtest_results.append(result)
+    results.sort(key=lambda x: x[3] if x[3] is not None else 0, reverse=True)
+    
+    # 初始化一個空列表用來儲存前三名的結果
+    top_3_results = []
+    # 用來記錄已選取的sharpe值
+    selected_sharpes = set()
 
+    for result in results:
+        if len(top_3_results) >= 3:
+            # 如果已經選取了三個不同的結果，則終止循環
+            break
 
-# 根据资产价值排序结果
-backtest_results.sort(key=lambda x: x[0], reverse=True)
+        sharpe = result[3]
+        if sharpe not in selected_sharpes:
+            # 如果這個sharpe值尚未被選取，則將其添加到結果列表和選取值集合中
+            top_3_results.append(result)
+            selected_sharpes.add(sharpe)
 
-# 选取前三个结果
-top_3_results = backtest_results[:3]
+    first_run = True
+    for result in top_3_results:
+        value, buy_expression, sell_expression, sharpe, drawdown = result
+        print(f"買入策略組合: {buy_expression}, \n賣出策略組合: {sell_expression}, \n淨收益: {value}, \nsharpe: {sharpe}, \nMDD: {drawdown}\n")
+        if first_run:
+            backTesting_logic.run_backtest(train_file, train_start, train_end, buy_expression, sell_expression, True)
+            first_run = False
+        else:
+            backTesting_logic.run_backtest(train_file, train_start, train_end, buy_expression, sell_expression)
 
-for value, expr, sharpe, drawdown in top_3_results:
-    print(f"策略組合: {expr}, 淨收益: {value}, sharpe: {sharpe}, MDD: {drawdown}")
+    end_time = time.time()
+    print(f"執行時間：{end_time - start_time} 秒")
 
-    # 重新运行回测以绘制图表
-    # backTesting_logic.run_backtest('train_data.csv', train_start_date, train_end_date, expr, True)
-
-print('-------------------------------------------------------------------------------')
-
-for value, expr, sharpe, drawdown in top_3_results:
-
-    # 在验证数据集上运行相同的策略
-    val_result = backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, expr)
-    val_value, val_expr, val_sharpe, val_drawdown = val_result
-
-    print(f"策略組合: {val_expr}, 淨收益: {val_value}, sharpe: {val_sharpe}, MDD: {val_drawdown}")
-    # backTesting_logic.run_backtest('validation_data.csv', validation_start_date, validation_end_date, expr, True)
-
-end_time = time.time()
-print(f"执行时间：{end_time - start_time} 秒")
+if __name__ == "__main__":
+    main()

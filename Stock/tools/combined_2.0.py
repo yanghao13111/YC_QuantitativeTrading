@@ -19,9 +19,10 @@ N = True
 O = False
 
 # 创建一个包含 7 个条件的列表
+conditions = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M']
 # 设置最多要取的条件数
 combined_number = 5
-num_conditions = 5
+num_conditions = 10
 
 # 定义一个函数来生成所有条件的组合，根据 combined_number 参数确定组合的最大长度
 def generate_expressions(conditions, combined_number):
