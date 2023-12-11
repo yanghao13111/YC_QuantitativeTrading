@@ -67,7 +67,7 @@ class MultiStrategy(bt.Strategy):
             return
 
         # 没有持仓时，检查是否应该买入
-        if not self.position and not eval(indicators.ema_downtrend_66) and eval(self.params.buy_expression):
+        if not self.position and not eval(indicators.ema_downtrend_66) and eval(indicators.ema66_check) and eval(self.params.buy_expression):
             self.order = self.buy()  # 做多
             self.entry_price = self.data.close[0]  # 记录进场价格
 

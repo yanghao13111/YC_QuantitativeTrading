@@ -38,9 +38,9 @@ def main():
     config = {
         'symbol': '2376.TW',
         'timeframe': '1d',  
-        'buy_pool': [indicators.bullish_alignment, indicators.allup, indicators.no_5ma, indicators.is_divergence_less_than_3_percent_5_10, indicators.is_divergence_less_than_3_percent_10_22, indicators.is_divergence_less_than_3_percent_22_66, indicators.volume_indicator],  
+        'buy_pool': [indicators.bullish_alignment, indicators.allup, indicators.no_5ma, indicators.is_divergence_less_than_3_percent_5_10, indicators.is_divergence_less_than_3_percent_10_22, indicators.is_divergence_less_than_3_percent_22_66, indicators.is_divergence_less_than_5_percent_5_10, indicators.is_divergence_less_than_5_percent_10_22, indicators.is_divergence_less_than_5_percent_22_66, indicators.volume_indicator],  
         'sell_pool': [indicators.ema_downtrend_22, indicators.ema_downtrend_10],  
-        'buy_combined': 7,
+        'buy_combined': 10,
         'sell_combined': 2,
     }
 
