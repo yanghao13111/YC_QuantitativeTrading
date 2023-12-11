@@ -43,9 +43,6 @@ if __name__ == "__main__":
     stock_list = [data['stock_id'] for data in taiwan_stock_datalist['data']]
     print(f"台灣股票代號總共有 {len(stock_list)} 個")
 
-# taiwan_stock_list = stock_db.data_loader.taiwan_stock_list()
-# stock_list = taiwan_stock_list['stock_id'].tolist()
-# print(f"台灣股票代號總共有 {len(stock_list)} 個")
 
 # 抓取資料
 # stock_db.fetch_and_save_stock_data(stock_list, "2013-01-01", "2023-01-01", "Stock/trainDataSet")
