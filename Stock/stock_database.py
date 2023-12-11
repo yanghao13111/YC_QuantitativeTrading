@@ -4,8 +4,9 @@ import os
 from datetime import datetime
 
 class StockDatabase:
-    def __init__(self):
+    def __init__(self, user_id, password):
         self.data_loader = DataLoader()
+        self.data_loader.login(user_id=user_id, password=password)
 
     def get_stock_price(self, stock_id, start_date, end_date):
         return self.data_loader.taiwan_stock_daily(stock_id, start_date, end_date)
@@ -29,7 +30,22 @@ class StockDatabase:
             except Exception as e:
                 print(f"提取 {stock_id} 資料時出錯：{e}")
 
-# 使用範例
-stock_db = StockDatabase()
-stock_list = ["2330", "2317", "1301"]  # 股票代號列表
-stock_db.fetch_and_save_stock_data(stock_list, "2013-01-01", "2023-01-01", "Stock/trainDataSet")
+
+
+if __name__ == "__main__":
+    # 創建 StockDatabase 的實例，並登錄
+    user_id = 'YC_Company'  # 用您的帳號替換
+    password = '@qazwsxedc123'  # 用您的密碼替換
+    stock_db = StockDatabase(user_id, password)
+
+    # 獲取所有台灣股票代號的列表
+    taiwan_stock_datalist = stock_db.data_loader.get_datalist(dataset='TaiwanStockInfo')
+    stock_list = [data['stock_id'] for data in taiwan_stock_datalist['data']]
+    print(f"台灣股票代號總共有 {len(stock_list)} 個")
+
+# taiwan_stock_list = stock_db.data_loader.taiwan_stock_list()
+# stock_list = taiwan_stock_list['stock_id'].tolist()
+# print(f"台灣股票代號總共有 {len(stock_list)} 個")
+
+# 抓取資料
+# stock_db.fetch_and_save_stock_data(stock_list, "2013-01-01", "2023-01-01", "Stock/trainDataSet")
