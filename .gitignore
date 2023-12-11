@@ -5,7 +5,7 @@
 __pycache__/
 
 # 忽略所有 CSV 文件
-*.csv
+# *.csv
 
 # 忽略所有 PNG 文件
 *.png
