@@ -30,7 +30,16 @@ class StockDatabase:
             except Exception as e:
                 print(f"提取 {stock_id} 資料時出錯：{e}")
 
-
+def read_stock_ids_from_excel(file_path):
+    """
+    從 Excel 文件中讀取股票代號。
+    
+    :param file_path: Excel 文件的路徑。
+    :return: 包含股票代號的列表。
+    """
+    data = pd.read_excel(file_path)
+    stock_ids = data['StockID'].tolist()  # 假設你的列名是 'StockID'
+    return stock_ids
 
 if __name__ == "__main__":
     # 創建 StockDatabase 的實例，並登錄
@@ -39,13 +48,12 @@ if __name__ == "__main__":
     stock_db = StockDatabase(user_id, password)
 
     # 獲取所有台灣股票代號的列表
-    taiwan_stock_datalist = stock_db.data_loader.get_datalist(dataset='TaiwanStockInfo')
-    stock_list = [data['stock_id'] for data in taiwan_stock_datalist['data']]
-    print(f"台灣股票代號總共有 {len(stock_list)} 個")
+    stock_list = []
 
-# taiwan_stock_list = stock_db.data_loader.taiwan_stock_list()
-# stock_list = taiwan_stock_list['stock_id'].tolist()
-# print(f"台灣股票代號總共有 {len(stock_list)} 個")
+    # 從 Excel 文件讀取股票代號
+    excel_path = 'Stock/trainDataSet/taiwan_stock_codes.xlsx'  # 用你的 Excel 文件路徑替換
+    stock_list = read_stock_ids_from_excel(excel_path)
+    print(len(stock_list))
 
-# 抓取資料
-# stock_db.fetch_and_save_stock_data(stock_list, "2013-01-01", "2023-01-01", "Stock/trainDataSet")
+    # 抓取資料
+    stock_db.fetch_and_save_stock_data(stock_list, "2010-01-01", "2020-01-01", "Stock/trainDataSet")
