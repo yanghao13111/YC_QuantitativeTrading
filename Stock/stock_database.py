@@ -4,9 +4,15 @@ import os
 from datetime import datetime
 
 class StockDatabase:
+    # # account: (user_id, password)
     def __init__(self, user_id, password):
         self.data_loader = DataLoader()
         self.data_loader.login(user_id=user_id, password=password)
+
+    # # token
+    # def __init__(self, token):
+    #     self.data_loader = DataLoader()
+    #     self.data_loader.login_by_token(api_token=token)
 
     def get_stock_price(self, stock_id, start_date, end_date):
         return self.data_loader.taiwan_stock_daily(stock_id, start_date, end_date)
@@ -45,9 +51,14 @@ if __name__ == "__main__":
     # 將股票代號分成三等份
     stock_lists = split_list(stock_list, 3)
 
-    # # 檢查每一個part的數量
+    # 檢查每一個part的數量
+    for i, part in enumerate(stock_lists):
+        print(f"第 {i+1} 部分有 {len(part)} 個股票代號。")
+
+    # 檢查每一個part的股票代號
+    # print(stock_lists[1])
     # for i, part in enumerate(stock_lists):
-    #     print(f"第 {i+1} 部分有 {len(part)} 個股票代號。")
+    #     print(f"第 {i+1} 部分的股票代號：{part}")
 
     # 為每個部分創建一個 StockDatabase 實例並登錄
     accounts = [
@@ -56,8 +67,17 @@ if __name__ == "__main__":
         ('YC_Company3', '@qazwsxedc123')
     ]
 
+    # api_tokens = [
+    #     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNjowNzoxOCIsInVzZXJfaWQiOiJZQ19Db21wYW55IiwiaXAiOiIxMTQuMzMuNy4xMTYifQ.4KDQU_-oQiy5eKDek3-4EyBCA7EEdRwbCjXvkdi9UTM',  # 將這些值替換為您的實際 API 令牌
+    #     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNjowNjozNiIsInVzZXJfaWQiOiJZQ19Db21wYW55MiIsImlwIjoiMTE0LjMzLjcuMTE2In0.5DmMY73riuTlRBCbT2N4v0RmCQLMCJbSfM7cagWMNkU',
+    #     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNTo0NjowNyIsInVzZXJfaWQiOiJZQ19Db21wYW55MyIsImlwIjoiMTE0LjMzLjcuMTE2In0.z-uIQoQbsEp40EcXzCkSapMb2rMB1U743E3OY2ss5Aw'
+    # ]
+
     # 分批抓取資料
     for i, part in enumerate(stock_lists):
+        # if i == 0 or i == 1:
+        #     print(f"已完成第 {i+1} 批的資料抓取。")
+        #     continue
         user_id, password = accounts[i]
         stock_db = StockDatabase(user_id, password)
         stock_db.fetch_and_save_stock_data(part, "2010-01-01", "2024-01-02", "Stock/trainDataSet")
