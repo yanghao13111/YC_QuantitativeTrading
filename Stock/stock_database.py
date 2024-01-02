@@ -37,7 +37,7 @@ def read_stock_ids_from_excel(file_path):
     :param file_path: Excel 文件的路徑。
     :return: 包含股票代號的列表。
     """
-    data = pd.read_excel(file_path)
+    data = pd.read_csv(file_path)
     stock_ids = data['StockID'].tolist()  # 假設你的列名是 'StockID'
     return stock_ids
 
@@ -51,9 +51,9 @@ if __name__ == "__main__":
     stock_list = []
 
     # 從 Excel 文件讀取股票代號
-    excel_path = 'Stock/trainDataSet/taiwan_stock_codes.xlsx'  # 用你的 Excel 文件路徑替換
+    excel_path = 'Stock/trainDataSet/taiwan_stock_codes.csv'  # 用你的 Excel 文件路徑替換
     stock_list = read_stock_ids_from_excel(excel_path)
     print(len(stock_list))
 
     # 抓取資料
-    stock_db.fetch_and_save_stock_data(stock_list, "2010-01-01", "2020-01-01", "Stock/trainDataSet")
+    # stock_db.fetch_and_save_stock_data(stock_list, "2010-01-01", "2020-01-01", "Stock/trainDataSet")
