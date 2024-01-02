@@ -15,12 +15,9 @@ class StockDatabase:
         for stock_id in stock_list:
             try:
                 stock_data = self.get_stock_price(stock_id, start_date, end_date)
-                # 確保日期欄位是 datetime 物件
                 stock_data['date'] = pd.to_datetime(stock_data['date'])
-                # 確保資料包含所需的欄位
                 required_columns = ['date', 'open', 'close', 'max', 'min', 'Trading_Volume']
                 if all(column in stock_data.columns for column in required_columns):
-                    # 為每個股票代號儲存整個資料集
                     file_name = f"{stock_id}.csv"
                     file_path = os.path.join(folder_path, file_name)
                     stock_data.to_csv(file_path, index=False)
@@ -31,29 +28,37 @@ class StockDatabase:
                 print(f"提取 {stock_id} 資料時出錯：{e}")
 
 def read_stock_ids_from_excel(file_path):
-    """
-    從 Excel 文件中讀取股票代號。
-    
-    :param file_path: Excel 文件的路徑。
-    :return: 包含股票代號的列表。
-    """
     data = pd.read_csv(file_path)
-    stock_ids = data['StockID'].tolist()  # 假設你的列名是 'StockID'
+    stock_ids = data['StockID'].tolist()
     return stock_ids
 
+def split_list(alist, wanted_parts=1):
+    length = len(alist)
+    return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] 
+             for i in range(wanted_parts) ]
+
 if __name__ == "__main__":
-    # 創建 StockDatabase 的實例，並登錄
-    user_id = 'YC_Company'  # 用您的帳號替換
-    password = '@qazwsxedc123'  # 用您的密碼替換
-    stock_db = StockDatabase(user_id, password)
-
-    # 獲取所有台灣股票代號的列表
-    stock_list = []
-
-    # 從 Excel 文件讀取股票代號
-    excel_path = 'Stock/trainDataSet/taiwan_stock_codes.csv'  # 用你的 Excel 文件路徑替換
+    # 讀取股票代號
+    excel_path = 'Stock/trainDataSet/taiwan_stock_codes.csv'
     stock_list = read_stock_ids_from_excel(excel_path)
-    print(len(stock_list))
 
-    # 抓取資料
-    # stock_db.fetch_and_save_stock_data(stock_list, "2010-01-01", "2020-01-01", "Stock/trainDataSet")
+    # 將股票代號分成三等份
+    stock_lists = split_list(stock_list, 3)
+
+    # # 檢查每一個part的數量
+    # for i, part in enumerate(stock_lists):
+    #     print(f"第 {i+1} 部分有 {len(part)} 個股票代號。")
+
+    # 為每個部分創建一個 StockDatabase 實例並登錄
+    accounts = [
+        ('YC_Company', '@qazwsxedc123'),
+        ('YC_Company2', '@qazwsxedc123'),
+        ('YC_Company3', '@qazwsxedc123')
+    ]
+
+    # 分批抓取資料
+    for i, part in enumerate(stock_lists):
+        user_id, password = accounts[i]
+        stock_db = StockDatabase(user_id, password)
+        stock_db.fetch_and_save_stock_data(part, "2010-01-01", "2024-01-02", "Stock/trainDataSet")
+        print(f"已完成第 {i+1} 批的資料抓取。")
