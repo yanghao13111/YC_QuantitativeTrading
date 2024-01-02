@@ -56,7 +56,9 @@ if __name__ == "__main__":
         print(f"第 {i+1} 部分有 {len(part)} 個股票代號。")
 
     # 檢查每一個part的股票代號
-    # print(stock_lists[1])
+    print(stock_lists[0])
+    print(stock_lists[1])
+    print(stock_lists[2])
     # for i, part in enumerate(stock_lists):
     #     print(f"第 {i+1} 部分的股票代號：{part}")
 
@@ -73,12 +75,15 @@ if __name__ == "__main__":
     #     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNTo0NjowNyIsInVzZXJfaWQiOiJZQ19Db21wYW55MyIsImlwIjoiMTE0LjMzLjcuMTE2In0.z-uIQoQbsEp40EcXzCkSapMb2rMB1U743E3OY2ss5Aw'
     # ]
 
+    # stock_db = StockDatabase('YC_Company', '@qazwsxedc123')
+    # stock_db.fetch_and_save_stock_data([8401, 8403], "2010-01-01", "2024-01-02", "Stock/trainDataSet")
+
     # 分批抓取資料
     for i, part in enumerate(stock_lists):
         # if i == 0 or i == 1:
         #     print(f"已完成第 {i+1} 批的資料抓取。")
         #     continue
         user_id, password = accounts[i]
-        stock_db = StockDatabase(user_id, password)
-        stock_db.fetch_and_save_stock_data(part, "2010-01-01", "2024-01-02", "Stock/trainDataSet")
+        # stock_db = StockDatabase(user_id, password)
+        # stock_db.fetch_and_save_stock_data(part, "2010-01-01", "2024-01-02", "Stock/trainDataSet")
         print(f"已完成第 {i+1} 批的資料抓取。")
