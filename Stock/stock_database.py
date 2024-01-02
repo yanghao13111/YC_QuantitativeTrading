@@ -1,7 +1,7 @@
 from FinMind.data import DataLoader
 import pandas as pd
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class StockDatabase:
     # # account: (user_id, password)
@@ -33,6 +33,42 @@ class StockDatabase:
             except Exception as e:
                 print(f"提取 {stock_id} 資料時出錯：{e}")
 
+    def update_stock_data(self, stock_list, folder_path):
+        for stock_id in stock_list:
+            file_path = os.path.join(folder_path, f"{stock_id}.csv")
+            try:
+                if os.path.exists(file_path):
+                    # 讀取現有數據並找到最後一筆數據的日期
+                    existing_data = pd.read_csv(file_path)
+                    existing_data['date'] = pd.to_datetime(existing_data['date'])
+                    last_date = existing_data['date'].max()
+
+                    # 設置更新的起始日期為最後一筆數據日期的次日
+                    start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
+                else:
+                    # 如果文件不存在，從較早的日期開始更新
+                    start_date = "2010-01-01"
+                
+                # 設置結束日期為今天
+                end_date = datetime.now().strftime('%Y-%m-%d')
+
+                # 獲取新數據
+                new_data = self.get_stock_price(stock_id, start_date, end_date)
+                new_data['date'] = pd.to_datetime(new_data['date'])
+
+                # 檢查並儲存最新一筆數據
+                if not new_data.empty:
+                    latest_data = new_data.iloc[-1:]  # 獲取最新一筆數據
+                    if os.path.exists(file_path):
+                        latest_data.to_csv(file_path, mode='a', header=False, index=False)
+                    else:
+                        latest_data.to_csv(file_path, index=False)
+                    print(f"為 {stock_id} 追加最新資料至 {file_path}")
+                else:
+                    print(f"{stock_id} 沒有新的數據可更新")
+            except Exception as e:
+                print(f"更新 {stock_id} 資料時出錯：{e}")
+
 def read_stock_ids_from_excel(file_path):
     data = pd.read_csv(file_path)
     stock_ids = data['StockID'].tolist()
@@ -56,9 +92,9 @@ if __name__ == "__main__":
         print(f"第 {i+1} 部分有 {len(part)} 個股票代號。")
 
     # 檢查每一個part的股票代號
-    print(stock_lists[0])
+    # print(stock_lists[0])
     print(stock_lists[1])
-    print(stock_lists[2])
+    # print(stock_lists[2])
     # for i, part in enumerate(stock_lists):
     #     print(f"第 {i+1} 部分的股票代號：{part}")
 
@@ -75,15 +111,17 @@ if __name__ == "__main__":
     #     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNTo0NjowNyIsInVzZXJfaWQiOiJZQ19Db21wYW55MyIsImlwIjoiMTE0LjMzLjcuMTE2In0.z-uIQoQbsEp40EcXzCkSapMb2rMB1U743E3OY2ss5Aw'
     # ]
 
-    # stock_db = StockDatabase('YC_Company', '@qazwsxedc123')
-    # stock_db.fetch_and_save_stock_data([8401, 8403], "2010-01-01", "2024-01-02", "Stock/trainDataSet")
+    stock_db = StockDatabase('YC_Company', '@qazwsxedc123')
+    stock_db.fetch_and_save_stock_data([], "2010-01-01", "2024-01-02", "Stock/trainDataSet")
+    # stock_db.update_stock_data([8401], "Stock/trainDataSet")
 
     # 分批抓取資料
-    for i, part in enumerate(stock_lists):
-        # if i == 0 or i == 1:
-        #     print(f"已完成第 {i+1} 批的資料抓取。")
-        #     continue
-        user_id, password = accounts[i]
-        # stock_db = StockDatabase(user_id, password)
-        # stock_db.fetch_and_save_stock_data(part, "2010-01-01", "2024-01-02", "Stock/trainDataSet")
-        print(f"已完成第 {i+1} 批的資料抓取。")
+    # for i, part in enumerate(stock_lists):
+    #     # if i == 0 or i == 1:
+    #     #     print(f"已完成第 {i+1} 批的資料抓取。")
+    #     #     continue
+    #     user_id, password = accounts[i]
+    #     stock_db = StockDatabase(user_id, password)
+    #     # stock_db.fetch_and_save_stock_data(part, "2010-01-01", "2024-01-02", "Stock/trainDataSet")
+    #     stock_db.update_stock_data(part, "Stock/trainDataSet")
+    #     print(f"已完成第 {i+1} 批的資料抓取。")
