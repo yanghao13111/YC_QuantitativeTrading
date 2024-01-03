@@ -47,7 +47,7 @@ class StockDatabase:
                     start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
                 else:
                     # 如果文件不存在，從較早的日期開始更新
-                    start_date = "2010-01-01"
+                    start_date = "2008-01-01"
                 
                 # 設置結束日期為今天
                 end_date = datetime.now().strftime('%Y-%m-%d')
@@ -92,6 +92,7 @@ if __name__ == "__main__":
         print(f"第 {i+1} 部分有 {len(part)} 個股票代號。")
 
     # 檢查每一個part的股票代號
+    print(stock_lists[0])
     # for i, part in enumerate(stock_lists):
     #     print(f"第 {i+1} 部分的股票代號：{part}")
 
@@ -110,8 +111,10 @@ if __name__ == "__main__":
 
     # 分批抓取資料
     for i, part in enumerate(stock_lists):
+        if i == 1 or i == 2:
+            continue
         user_id, password = accounts[i]
         stock_db = StockDatabase(user_id, password)
-        # stock_db.fetch_and_save_stock_data(part, "2010-01-01", "2024-01-02", "Stock/trainDataSet")
-        stock_db.update_stock_data(part, "Stock/trainDataSet")
+        stock_db.fetch_and_save_stock_data(part, "2008-01-01", "2024-01-02", "Stock/trainDataSet")
+        # stock_db.update_stock_data(part, "Stock/trainDataSet")
         print(f"已完成第 {i+1} 批的資料抓取。")
