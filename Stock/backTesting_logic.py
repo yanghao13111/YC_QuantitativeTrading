@@ -26,6 +26,10 @@ def generate_expressions(conditions, combined_number):
 
     return expressions
 
+def replace_self_with_data(expression, data):
+    # 替换表达式中的'self'为当前数据集的引用，同时确保数字前有下划线避免语法错误
+    return expression.replace('self.', f'd.{data._name}.')
+
 class MultiStrategy(bt.Strategy):
     params = (
         # 買入和賣出表達式參數
@@ -34,79 +38,102 @@ class MultiStrategy(bt.Strategy):
     )
 
     def __init__(self):
-        self.order = None
-        self.entry_price = None
-        self.volume = self.data.volume
+        # 创建一个字典来跟踪每个数据集的订单和价格
+        self.orders = {}
+        self.entry_prices = {}
 
-        # EMA 指标
-        self.ema5 = bt.ind.EMA(self.data.close, period=5)
-        self.ema10 = bt.ind.EMA(self.data.close, period=10)
-        self.ema22 = bt.ind.EMA(self.data.close, period=22)
-        self.ema66 = bt.ind.EMA(self.data.close, period=66)
+        for i, d in enumerate(self.datas):
+            # 对于每只股票，创建技术指标
+            self.orders[d._name] = None
+            self.entry_prices[d._name] = None
 
-        # MACD 指标
-        self.macd = bt.indicators.MACD(self.data.close)
+            # 创建和保存指标，可根据您的需要进行调整
+            d.ema5 = bt.ind.EMA(d.close, period=5)
+            d.ema10 = bt.ind.EMA(d.close, period=10)
+            d.ema22 = bt.ind.EMA(d.close, period=22)
+            d.ema66 = bt.ind.EMA(d.close, period=66)
 
-        # KDJ 指標
-        self.stochastic = bt.indicators.Stochastic(self.data)
-        self.k = self.stochastic.percK
-        self.d = self.stochastic.percD
-        self.j = 3 * self.k - 2 * self.d  # J線計算公式
+            # MACD 指标
+            d.macd = bt.indicators.MACD(d.close)
+
+            # KDJ 指標
+            d.stochastic = bt.indicators.Stochastic(d)
+            d.k = d.stochastic.percK
+            d.d = d.stochastic.percD
+            d.j = 3 * d.k - 2 * d.d  # J線計算公式
         
-        # RSI 指标
-        self.rsi = bt.indicators.RSI(self.data.close, period=14)
+            # RSI 指标
+            d.rsi = bt.indicators.RSI(d.close, period=14)
         
-        # DMI 指标
-        self.dmi = bt.indicators.DMI(self.data, period=14)
-        self.plusDI = self.dmi.plusDI  # 正確的屬性名稱
-        self.minusDI = self.dmi.minusDI
+            # DMI 指标
+            d.dmi = bt.indicators.DMI(d, period=14)
+            d.plusDI = d.dmi.plusDI
+            d.minusDI = d.dmi.minusDI
+
 
     def next(self):
-        # 检查是否有未完成的订单
-        if self.order and self.order.status in [bt.Order.Submitted, bt.Order.Accepted]:
-            return
+        for i, d in enumerate(self.datas):
+            dt, dn = self.datetime.date(), d._name
 
-        # 没有持仓时，检查是否应该买入
-        if not self.position and not eval(indicators.ema_downtrend_66) and eval(indicators.ema66_check) and eval(self.params.buy_expression):
-            self.order = self.buy()  # 做多
-            self.entry_price = self.data.close[0]  # 记录进场价格
+            # 获取当前数据集的订单和持仓
+            current_order = self.orders[dn]
+            current_position = self.getposition(d).size
 
-        # 持有做多仓位时，检查是否应该平仓
-        elif self.position.size > 0:
-            if eval(self.params.sell_expression) or eval(indicators.ema_downtrend_66):
-                self.order = self.close()  # 根据卖出表达式平掉做多仓位
+            # 检查是否有未完成的订单
+            if current_order and current_order.status in [bt.Order.Submitted, bt.Order.Accepted]:
+                continue
+
+            # 准备买入和卖出条件
+            buy_conditions = replace_self_with_data(self.params.buy_expression, d)
+            sell_conditions = replace_self_with_data(self.params.sell_expression, d)
+
+            # 没有持仓时，检查是否应该买入
+            if current_position == 0 and eval(buy_conditions):
+                self.orders[dn] = self.buy(data=d)
+                self.entry_prices[dn] = d.close[0]
+
+            # 持有做多仓位时，检查是否应该平仓
+            elif current_position > 0 and eval(sell_conditions):
+                self.orders[dn] = self.close(data=d)
 
 
-
-def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression, plot=False):
+def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression, plot=False):
     cerebro = bt.Cerebro()
     cerebro.addstrategy(MultiStrategy, buy_expression=buy_expression, sell_expression=sell_expression)
 
-    data = bt.feeds.GenericCSVData(
-        dataname=data_file,
-        fromdate=from_date,
-        todate=to_date,
-        nullvalue=0.0,
-        dtformat=('%Y-%m-%d'), 
-        datetime=0,
-        open=1,
-        high=2,
-        low=3,
-        close=4,
-        volume=5,
-        openinterest=-1,
-        timeframe=bt.TimeFrame.Days 
-    )
+    # 修改此处以接受多个数据文件
+    for file in data_files:
+        data = bt.feeds.GenericCSVData(
+            dataname=file,
+            fromdate=datetime.strptime(from_date, '%Y-%m-%d'),
+            todate=datetime.strptime(to_date, '%Y-%m-%d'),
+            nullvalue=0.0,
+            dtformat=('%Y-%m-%d'), 
+            datetime=0,
+            open=4,
+            high=5,
+            low=6,
+            close=7,
+            volume=2,
+            openinterest=-1,
+            timeframe=bt.TimeFrame.Days 
+        )
+        cerebro.adddata(data)
 
-    cerebro.adddata(data)
+    # 设置初始资本
     cerebro.broker.setcash(1000000.0)
-    cerebro.addsizer(bt.sizers.PercentSizer, percents = 90)
+
+    # 设置每笔交易使用的股票百分比
+    cerebro.addsizer(bt.sizers.PercentSizer, percents=90)
+
+    # 设置佣金
     cerebro.broker.setcommission(commission=0.0035)
 
     # 添加分析器
-    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio', timeframe=bt.TimeFrame.Minutes, compression=60, riskfreerate=2.28e-6)
+    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio', timeframe=bt.TimeFrame.Days)
     cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
 
+    # 运行策略
     results = cerebro.run()
     final_value = cerebro.broker.getvalue() - 1000000.0
     sharpe_ratio = results[0].analyzers.sharpe_ratio.get_analysis()['sharperatio']
@@ -114,14 +141,14 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
 
     if plot:
         # 显示图表
-        img = cerebro.plot(
-            style='candlestick', 
-            barup='red', 
-            bardown='green',
-            start=60
-        )
-        # filename = f'{from_date}.png'
-        # img[0][0].savefig(filename)
-        return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
-    else:
-        return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
+        cerebro.plot(style='candlestick', barup='red', bardown='green')
+    
+    return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
+
+# 测试代码
+data_files = ['Stock/trainDataSet/2230.csv', 'Stock/trainDataSet/2331.csv']  # 更新您的股票数据文件路径
+buy_expression = 'self.ema5[0] > self.ema10[0] and self.ema10[0] > self.ema22[0] and self.ema22[0] > self.ema66[0] and self.ema5[0] > self.ema5[-1] and self.ema10[0] > self.ema10[-1] and self.ema22[0] > self.ema22[-1] and self.ema66[0] > self.ema66[-1] and abs((self.ema10[0] - self.ema22[0]) / self.ema22[0]) < 0.03 or abs((self.ema22[0] - self.ema66[0]) / self.ema66[0]) < 0.03'
+sell_expression = 'self.ema22[0] < self.ema22[-1] and self.ema10[0] < self.ema10[-1] and self.ema66[0] < self.ema66[-1]'
+
+results = run_backtest(data_files, '2015-01-01', '2019-01-01', buy_expression, sell_expression, plot=True)
+print(results)
