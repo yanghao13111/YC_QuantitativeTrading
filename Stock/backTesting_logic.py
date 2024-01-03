@@ -1,4 +1,5 @@
 import backtrader as bt
+import pandas as pd
 import indicators
 from itertools import combinations, product
 from datetime import datetime
@@ -26,9 +27,9 @@ def generate_expressions(conditions, combined_number):
 
     return expressions
 
-def replace_self_with_data(expression, data):
+def replace_self_with_data(expression):
     # 替换表达式中的'self'为当前数据集的引用，同时确保数字前有下划线避免语法错误
-    return expression.replace('self.', f'd.{data._name}.')
+    return expression.replace('self.', f'd.')
 
 class MultiStrategy(bt.Strategy):
     params = (
@@ -52,6 +53,7 @@ class MultiStrategy(bt.Strategy):
             d.ema10 = bt.ind.EMA(d.close, period=10)
             d.ema22 = bt.ind.EMA(d.close, period=22)
             d.ema66 = bt.ind.EMA(d.close, period=66)
+            d.ema264 = bt.ind.EMA(d.close, period=264)
 
             # MACD 指标
             d.macd = bt.indicators.MACD(d.close)
@@ -121,7 +123,7 @@ def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression
         cerebro.adddata(data)
 
     # 设置初始资本
-    cerebro.broker.setcash(1000000.0)
+    cerebro.broker.setcash(10000000000000000000000000.0)
 
     # 设置每笔交易使用的股票百分比
     cerebro.addsizer(bt.sizers.PercentSizer, percents=90)
@@ -135,7 +137,7 @@ def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression
 
     # 运行策略
     results = cerebro.run()
-    final_value = cerebro.broker.getvalue() - 1000000.0
+    final_value = cerebro.broker.getvalue() - 10000000000000000000000000.0
     sharpe_ratio = results[0].analyzers.sharpe_ratio.get_analysis()['sharperatio']
     max_drawdown = results[0].analyzers.drawdown.get_analysis()['max']['drawdown']
 
@@ -146,9 +148,14 @@ def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression
     return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
 
 # 测试代码
-data_files = ['Stock/trainDataSet/2230.csv', 'Stock/trainDataSet/2331.csv']  # 更新您的股票数据文件路径
-buy_expression = 'self.ema5[0] > self.ema10[0] and self.ema10[0] > self.ema22[0] and self.ema22[0] > self.ema66[0] and self.ema5[0] > self.ema5[-1] and self.ema10[0] > self.ema10[-1] and self.ema22[0] > self.ema22[-1] and self.ema66[0] > self.ema66[-1] and abs((self.ema10[0] - self.ema22[0]) / self.ema22[0]) < 0.03 or abs((self.ema22[0] - self.ema66[0]) / self.ema66[0]) < 0.03'
+# 讀取 CSV 文件以獲取台灣股票代碼列表
+taiwan_stocks_df = pd.read_csv('Stock/taiwan_stock_codes.csv')  # 替換為您的 CSV 文件路徑
+# 確保股票代碼為字串格式並添加 ".TW"
+taiwan_stocks = taiwan_stocks_df['Stock Code'].apply(lambda x: f"{x}").tolist()
+
+data_folder = 'Stock/trainDataSet'  # 設定你的數據集文件夾路徑
+buy_expression = 'self.ema5[0] > self.ema10[0] and self.ema10[0] > self.ema22[0] and self.ema22[0] > self.ema66[0] and self.ema66[0] > self.ema264[0] and self.ema5[0] > self.ema5[-1] and self.ema10[0] > self.ema10[-1] and self.ema22[0] > self.ema22[-1] and self.ema66[0] > self.ema66[-1] and self.ema264[0] > self.ema264[-1] and abs((self.ema10[0] - self.ema22[0]) / self.ema22[0]) < 0.02 and abs((self.ema22[0] - self.ema66[0]) / self.ema66[0]) < 0.02 and abs((self.ema66[0] - self.ema264[0]) / self.ema264[0]) < 0.1'
 sell_expression = 'self.ema22[0] < self.ema22[-1] and self.ema10[0] < self.ema10[-1] and self.ema66[0] < self.ema66[-1]'
 
 results = run_backtest(data_files, '2015-01-01', '2019-01-01', buy_expression, sell_expression, plot=True)
-print(results)
+print(results[0])
