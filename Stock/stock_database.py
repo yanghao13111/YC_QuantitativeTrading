@@ -92,7 +92,7 @@ if __name__ == "__main__":
         print(f"第 {i+1} 部分有 {len(part)} 個股票代號。")
 
     # 檢查每一個part的股票代號
-    print(stock_lists[2])
+    print(stock_lists[1])
     # for i, part in enumerate(stock_lists):
     #     print(f"第 {i+1} 部分的股票代號：{part}")
 
@@ -103,8 +103,8 @@ if __name__ == "__main__":
         ('YC_Company3', '@qazwsxedc123')
     ]
 
-    stock_db = StockDatabase('YC_Company2', '@qazwsxedc123')
-    stock_db.update_stock_data(part, "Stock/trainDataSet")
+    # stock_db = StockDatabase('YC_Company2', '@qazwsxedc123')
+    # stock_db.update_stock_data([2376], "Stock/trainDataSet")
 
     api_tokens = [
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNjowNzoxOCIsInVzZXJfaWQiOiJZQ19Db21wYW55IiwiaXAiOiIxMTQuMzMuNy4xMTYifQ.4KDQU_-oQiy5eKDek3-4EyBCA7EEdRwbCjXvkdi9UTM',  # 將這些值替換為您的實際 API 令牌
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     # 分批抓取資料
     for i, part in enumerate(stock_lists):
-        if i == 0 or i == 1:
+        if i == 0 or i == 2:
             continue
         user_id, password = accounts[i]
         stock_db = StockDatabase(user_id, password)
