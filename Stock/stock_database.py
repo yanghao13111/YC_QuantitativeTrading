@@ -104,20 +104,20 @@ if __name__ == "__main__":
     ]
 
     stock_db = StockDatabase('YC_Company2', '@qazwsxedc123')
-    stock_db.update_stock_data([6803, 6804, 6805, 6806, 6807, 6811, 6821, 6823, 6829, 6830, 6834, 6835, 6840, 6841, 6843, 6846, 6854, 6855, 6856, 6859, 6861, 6863, 6865, 6870, 6874, 6877, 6894, 6895, 6901, 6902, 6904, 6916, 6922, 6933, 7402, 7556, 8011, 8016, 8021, 8024, 8027, 8028, 8032, 8033, 8034, 8038, 8039, 8040, 8042, 8043, 8044, 8046, 8047, 8048, 8049, 8050, 8054, 8059, 8064, 8066, 8067, 8068, 8069, 8070, 8071, 8072, 8074, 8076, 8077, 8081, 8083, 8084, 8085, 8086, 8087, 8088, 8089, 8091, 8092, 8093, 8096, 8097, 8099, 8101, 8103, 8104, 8105, 8107, 8109, 8110, 8111, 8112, 8114, 8121, 8131, 8147, 8150, 8155, 8163, 8171, 8176, 8182, 8183, 8201, 8210, 8213, 8215, 8222, 8227, 8234, 8240, 8249, 8255, 8261, 8271, 8277, 8279, 8284, 8289, 8291, 8299, 8341, 8342, 8349, 8354, 8358, 8367, 8374, 8383, 8390, 8401, 8403, 8404, 8409, 8410, 8411, 8415, 8416, 8418, 8420, 8421, 8422, 8423, 8424, 8426, 8429, 8431, 8432, 8433, 8435, 8436, 8437, 8438, 8440, 8442, 8443, 8444, 8446, 8450, 8454, 8455, 8462, 8463, 8464, 8466, 8467, 8472, 8473, 8476, 8477, 8478, 8481, 8482, 8488, 8489, 8499, 8905, 8906, 8908, 8916, 8917, 8921, 8923, 8924, 8926, 8927, 8928, 8929, 8930, 8931, 8932, 8933, 8935, 8936, 8937, 8938, 8940, 8941, 8942, 8996, 9105, 9802, 9902, 9904, 9905, 9906, 9907, 9908, 9910, 9911, 9912, 9914, 9917, 9918, 9919, 9921, 9924, 9925, 9926, 9927, 9928, 9929, 9930, 9931, 9933, 9934, 9935, 9937, 9938, 9939, 9940, 9941, 9942, 9943, 9944, 9945, 9946, 9949, 9950, 9951, 9955, 9958, 9960, 9962, 911608, 911622], "Stock/trainDataSet")
+    stock_db.update_stock_data(part, "Stock/trainDataSet")
 
-    # api_tokens = [
-    #     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNjowNzoxOCIsInVzZXJfaWQiOiJZQ19Db21wYW55IiwiaXAiOiIxMTQuMzMuNy4xMTYifQ.4KDQU_-oQiy5eKDek3-4EyBCA7EEdRwbCjXvkdi9UTM',  # 將這些值替換為您的實際 API 令牌
-    #     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNjowNjozNiIsInVzZXJfaWQiOiJZQ19Db21wYW55MiIsImlwIjoiMTE0LjMzLjcuMTE2In0.5DmMY73riuTlRBCbT2N4v0RmCQLMCJbSfM7cagWMNkU',
-    #     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNTo0NjowNyIsInVzZXJfaWQiOiJZQ19Db21wYW55MyIsImlwIjoiMTE0LjMzLjcuMTE2In0.z-uIQoQbsEp40EcXzCkSapMb2rMB1U743E3OY2ss5Aw'
-    # ]
+    api_tokens = [
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNjowNzoxOCIsInVzZXJfaWQiOiJZQ19Db21wYW55IiwiaXAiOiIxMTQuMzMuNy4xMTYifQ.4KDQU_-oQiy5eKDek3-4EyBCA7EEdRwbCjXvkdi9UTM',  # 將這些值替換為您的實際 API 令牌
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNjowNjozNiIsInVzZXJfaWQiOiJZQ19Db21wYW55MiIsImlwIjoiMTE0LjMzLjcuMTE2In0.5DmMY73riuTlRBCbT2N4v0RmCQLMCJbSfM7cagWMNkU',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNTo0NjowNyIsInVzZXJfaWQiOiJZQ19Db21wYW55MyIsImlwIjoiMTE0LjMzLjcuMTE2In0.z-uIQoQbsEp40EcXzCkSapMb2rMB1U743E3OY2ss5Aw'
+    ]
 
     # 分批抓取資料
-    # for i, part in enumerate(stock_lists):
-    #     if i == 0 or i == 1:
-    #         continue
-    #     user_id, password = accounts[i]
-    #     stock_db = StockDatabase(user_id, password)
-    #     # stock_db.fetch_and_save_stock_data(part, "2008-01-01", "2024-01-02", "Stock/trainDataSet")
-    #     stock_db.update_stock_data(part, "Stock/trainDataSet")
-    #     print(f"已完成第 {i+1} 批的資料抓取。")
+    for i, part in enumerate(stock_lists):
+        if i == 0 or i == 1:
+            continue
+        user_id, password = accounts[i]
+        stock_db = StockDatabase(user_id, password)
+        # stock_db.fetch_and_save_stock_data(part, "2008-01-01", "2024-01-02", "Stock/trainDataSet")
+        stock_db.update_stock_data(part, "Stock/trainDataSet")
+        print(f"已完成第 {i+1} 批的資料抓取。")

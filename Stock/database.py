@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 # today = datetime.today().strftime('%Y-%m-%d')
 
 # 指定日期為 2023年1月1日
-specified_date = '2024-01-02'
+specified_date = '2024-01-03'
 
 def calculate_ema(prices, span):
     """
