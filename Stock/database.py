@@ -46,18 +46,7 @@ def screen_stock(symbol, data_folder):
         (df['EMA5'] > df['EMA10']) &
         (df['EMA10'] > df['EMA22']) &
         (df['EMA22'] > df['EMA66']) &
-        (df['EMA66'] > df['EMA264']) &
-        (df['EMA5'] > df['EMA5'].shift(1)) &
-        (df['EMA10'] > df['EMA10'].shift(1)) &
-        (df['EMA22'] > df['EMA22'].shift(1)) &
-        (df['EMA66'] > df['EMA66'].shift(1)) &
-        (df['EMA264'] > df['EMA264'].shift(1)) &
-        (abs((df['EMA5'] - df['EMA10']) / df['EMA10']) < 0.02) & 
-        (abs((df['EMA10'] - df['EMA22']) / df['EMA22']) < 0.02) &
-        (abs((df['EMA22'] - df['EMA66']) / df['EMA66']) < 0.02) &
-        (abs((df['EMA66'] - df['EMA264']) / df['EMA264']) < 0.1) &
-        (df['Trading_Volume'] > 300*1000) &
-        (df['Trading_Volume'] > 2 * df['Trading_Volume'].shift(1))
+        (df['EMA66'] > df['EMA264']) 
     )
 
     # 只返回最後一行（即今天）的數據
