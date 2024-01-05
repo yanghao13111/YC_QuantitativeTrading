@@ -4,7 +4,6 @@ import indicators
 from itertools import combinations, product
 from datetime import datetime
 import backtrader.analyzers as btanalyzers
-from tqdm import tqdm
 
 
 # 定义一个函数来生成所有条件的组合
@@ -104,7 +103,8 @@ def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression
     cerebro = bt.Cerebro()
     cerebro.addstrategy(MultiStrategy, buy_expression=buy_expression, sell_expression=sell_expression)
 
-    for file in tqdm(data_files, desc='Processing Data Files'):
+    # 修改此处以接受多个数据文件
+    for file in data_files:
         data = bt.feeds.GenericCSVData(
             dataname=file,
             fromdate=datetime.strptime(from_date, '%Y-%m-%d'),
@@ -150,7 +150,7 @@ def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression
 
 # 測試代碼
 # 讀取 CSV 文件以獲取台灣股票代碼列表
-taiwan_stocks_df = pd.read_csv('Stock/taiwan_stock_codes.csv')  # 替換為你的 CSV 文件路徑
+taiwan_stocks_df = pd.read_csv('Stock/tets.csv')  # 替換為你的 CSV 文件路徑
 # 確保股票代碼為字符串格式並添加 ".TW"
 taiwan_stocks = taiwan_stocks_df['Stock Code'].apply(lambda x: f"{x}").tolist()
 

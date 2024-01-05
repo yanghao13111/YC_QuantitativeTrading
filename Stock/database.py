@@ -44,9 +44,7 @@ def screen_stock(symbol, data_folder):
     # 條件判斷
     condition = (
         (df['EMA5'] > df['EMA10']) &
-        (df['EMA10'] > df['EMA22']) &
-        (df['EMA22'] > df['EMA66']) &
-        (df['EMA66'] > df['EMA264']) 
+        (df['EMA10'] > df['EMA22']) 
     )
 
     # 只返回最後一行（即今天）的數據

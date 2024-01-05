@@ -92,7 +92,7 @@ if __name__ == "__main__":
         print(f"第 {i+1} 部分有 {len(part)} 個股票代號。")
 
     # 檢查每一個part的股票代號
-    print(stock_lists[2])
+    print(stock_lists[0])
     # for i, part in enumerate(stock_lists):
     #     print(f"第 {i+1} 部分的股票代號：{part}")
 
@@ -103,8 +103,8 @@ if __name__ == "__main__":
         ('YC_Company3', '@qazwsxedc123')
     ]
 
-    stock_db = StockDatabase('YC_Company2', '@qazwsxedc123')
-    stock_db.update_stock_data([9919, 9921, 9924, 9925, 9926, 9927, 9928, 9929, 9930, 9931, 9933, 9934, 9935, 9937, 9938, 9939, 9940, 9941, 9942, 9943, 9944, 9945, 9946, 9949, 9950, 9951, 9955, 9958, 9960, 9962, 911608, 911622], "Stock/trainDataSet")
+    # stock_db = StockDatabase('YC_Company2', '@qazwsxedc123')
+    # stock_db.update_stock_data([9919, 9921, 9924, 9925, 9926, 9927, 9928, 9929, 9930, 9931, 9933, 9934, 9935, 9937, 9938, 9939, 9940, 9941, 9942, 9943, 9944, 9945, 9946, 9949, 9950, 9951, 9955, 9958, 9960, 9962, 911608, 911622], "Stock/trainDataSet")
 
     api_tokens = [
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNjowNzoxOCIsInVzZXJfaWQiOiJZQ19Db21wYW55IiwiaXAiOiIxMTQuMzMuNy4xMTYifQ.4KDQU_-oQiy5eKDek3-4EyBCA7EEdRwbCjXvkdi9UTM',  # 將這些值替換為您的實際 API 令牌
@@ -112,12 +112,12 @@ if __name__ == "__main__":
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRlIjoiMjAyNC0wMS0wMiAxNTo0NjowNyIsInVzZXJfaWQiOiJZQ19Db21wYW55MyIsImlwIjoiMTE0LjMzLjcuMTE2In0.z-uIQoQbsEp40EcXzCkSapMb2rMB1U743E3OY2ss5Aw'
     ]
 
-    # # 分批抓取資料
-    # for i, part in enumerate(stock_lists):
-    #     if i == 0 or i == 1:
-    #         continue
-    #     user_id, password = accounts[i]
-    #     stock_db = StockDatabase(user_id, password)
-    #     # stock_db.fetch_and_save_stock_data(part, "2008-01-01", "2024-01-02", "Stock/trainDataSet")
-    #     stock_db.update_stock_data(part, "Stock/trainDataSet")
-    #     print(f"已完成第 {i+1} 批的資料抓取。")
+    # 分批抓取資料
+    for i, part in enumerate(stock_lists):
+        if i == 2 or i == 1:
+            continue
+        user_id, password = accounts[i]
+        stock_db = StockDatabase(user_id, password)
+        # stock_db.fetch_and_save_stock_data(part, "2008-01-01", "2024-01-02", "Stock/trainDataSet")
+        stock_db.update_stock_data(part, "Stock/trainDataSet")
+        print(f"已完成第 {i+1} 批的資料抓取。")
