@@ -2,6 +2,7 @@ from FinMind.data import DataLoader
 import pandas as pd
 import os
 from datetime import datetime, timedelta
+import talib
 
 class StockDatabase:
     # # account: (user_id, password)
@@ -33,6 +34,23 @@ class StockDatabase:
             except Exception as e:
                 print(f"提取 {stock_id} 資料時出錯：{e}")
 
+    def calculate_ema(self, data, column='close'):
+        """
+        Calculate EMAs for 5, 10, 22, 66, and 264 days if enough data is present.
+        Adds the EMAs as new columns to the dataframe.
+        """
+        if len(data) >= 5:
+            data['5ema'] = talib.EMA(data[column].values, timeperiod=5)
+        if len(data) >= 10:
+            data['10ema'] = talib.EMA(data[column].values, timeperiod=10)
+        if len(data) >= 22:
+            data['22ema'] = talib.EMA(data[column].values, timeperiod=22)
+        if len(data) >= 66:
+            data['66ema'] = talib.EMA(data[column].values, timeperiod=66)
+        if len(data) >= 264:
+            data['264ema'] = talib.EMA(data[column].values, timeperiod=264)
+        return data
+
     def update_stock_data(self, stock_list, folder_path):
         for stock_id in stock_list:
             file_path = os.path.join(folder_path, f"{stock_id}.csv")
@@ -58,12 +76,13 @@ class StockDatabase:
 
                 # 檢查並儲存最新一筆數據
                 if not new_data.empty:
-                    latest_data = new_data.iloc[-1:]  # 獲取最新一筆數據
-                    if os.path.exists(file_path):
-                        latest_data.to_csv(file_path, mode='a', header=False, index=False)
-                    else:
-                        latest_data.to_csv(file_path, index=False)
-                    print(f"為 {stock_id} 追加最新資料至 {file_path}")
+                    # 合併舊數據和新數據
+                    full_data = pd.concat([existing_data, new_data], ignore_index=True)
+                    # 計算EMA
+                    full_data = self.calculate_ema(full_data)
+                    # 儲存數據
+                    full_data.to_csv(file_path, index=False)
+                    print(f"為 {stock_id} 更新數據並計算EMA至 {file_path}")
                 else:
                     print(f"{stock_id} 沒有新的數據可更新")
             except Exception as e:
@@ -81,7 +100,7 @@ def split_list(alist, wanted_parts=1):
 
 if __name__ == "__main__":
     # 讀取股票代號
-    excel_path = 'Stock/trainDataSet/taiwan_stock_codes.csv'
+    excel_path = 'Stock/taiwan_stock_codes.csv'
     stock_list = read_stock_ids_from_excel(excel_path)
 
     # 將股票代號分成三等份
@@ -92,7 +111,7 @@ if __name__ == "__main__":
         print(f"第 {i+1} 部分有 {len(part)} 個股票代號。")
 
     # 檢查每一個part的股票代號
-    print(stock_lists[0])
+    print(stock_lists[2])
     # for i, part in enumerate(stock_lists):
     #     print(f"第 {i+1} 部分的股票代號：{part}")
 
@@ -114,7 +133,7 @@ if __name__ == "__main__":
 
     # 分批抓取資料
     for i, part in enumerate(stock_lists):
-        if i == 2 or i == 1:
+        if i == 0 or i == 1:
             continue
         user_id, password = accounts[i]
         stock_db = StockDatabase(user_id, password)
