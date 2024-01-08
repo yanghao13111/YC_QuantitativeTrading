@@ -1,10 +1,7 @@
 import backtrader as bt
-import pandas as pd
-import indicators
 from itertools import combinations, product
 from datetime import datetime
 import backtrader.analyzers as btanalyzers
-from tqdm import tqdm
 
 
 # 定义一个函数来生成所有条件的组合
@@ -43,72 +40,84 @@ class MultiStrategy(bt.Strategy):
         # 创建一个字典来跟踪每个数据集的订单和价格
         self.orders = {}
         self.entry_prices = {}
+        self.trade_list = [] 
 
         for i, d in enumerate(self.datas):
+            print(f"Initializing indicators for {d._name}")  # 打印当前正在处理的股票名称
             # 对于每只股票，创建技术指标
             self.orders[d._name] = None
             self.entry_prices[d._name] = None
 
-            # 创建和保存指标，可根据您的需要进行调整
-            d.ema5 = bt.ind.EMA(d.close, period=5)
-            d.ema10 = bt.ind.EMA(d.close, period=10)
-            d.ema22 = bt.ind.EMA(d.close, period=22)
-            d.ema66 = bt.ind.EMA(d.close, period=66)
-            d.ema264 = bt.ind.EMA(d.close, period=264)
+            try:
+                # 创建和保存指标，可根据您的需要进行调整
+                d.ema5 = bt.ind.EMA(d.close, period=5)
+                d.ema10 = bt.ind.EMA(d.close, period=10)
+                d.ema22 = bt.ind.EMA(d.close, period=22)
+                d.ema66 = bt.ind.EMA(d.close, period=66)
+                d.ema264 = bt.ind.EMA(d.close, period=264)
+            except Exception as e:
+                print(f"Error initializing indicators for {d._name}: {e}")
+                continue
 
-            # MACD 指标
-            d.macd = bt.indicators.MACD(d.close)
+            # # MACD 指标
+            # d.macd = bt.indicators.MACD(d.close)
 
-            # KDJ 指標
-            d.stochastic = bt.indicators.Stochastic(d)
-            d.k = d.stochastic.percK
-            d.d = d.stochastic.percD
-            d.j = 3 * d.k - 2 * d.d  # J線計算公式
+            # # KDJ 指標
+            # d.stochastic = bt.indicators.Stochastic(d)
+            # d.k = d.stochastic.percK
+            # d.d = d.stochastic.percD
+            # d.j = 3 * d.k - 2 * d.d  # J線計算公式
         
-            # RSI 指标
-            d.rsi = bt.indicators.RSI(d.close, period=14)
+            # # RSI 指标
+            # d.rsi = bt.indicators.RSI(d.close, period=14)
         
-            # DMI 指标
-            d.dmi = bt.indicators.DMI(d, period=14)
-            d.plusDI = d.dmi.plusDI
-            d.minusDI = d.dmi.minusDI
+            # # DMI 指标
+            # d.dmi = bt.indicators.DMI(d, period=14)
+            # d.plusDI = d.dmi.plusDI
+            # d.minusDI = d.dmi.minusDI
 
 
     def next(self):
         for i, d in enumerate(self.datas):
             dt, dn = self.datetime.date(), d._name
+            try:
+                # 打印当前日期和正在处理的股票名称
+                print(f"Processing date: {dt}, stock: {dn}")
 
-            # 获取当前数据集的订单和持仓
-            current_order = self.orders[dn]
-            current_position = self.getposition(d).size
+                # 获取当前数据集的订单和持仓
+                current_order = self.orders[dn]
+                current_position = self.getposition(d).size
 
-            # 检查是否有未完成的订单
-            if current_order and current_order.status in [bt.Order.Submitted, bt.Order.Accepted]:
-                continue
+                # 检查是否有未完成的订单
+                if current_order and current_order.status in [bt.Order.Submitted, bt.Order.Accepted]:
+                    continue
 
-            # 准备买入和卖出条件
-            buy_conditions = replace_self_with_data(self.params.buy_expression, d)
-            sell_conditions = replace_self_with_data(self.params.sell_expression, d)
+                # 准备买入和卖出条件
+                buy_conditions = replace_self_with_data(self.params.buy_expression, d)
+                sell_conditions = replace_self_with_data(self.params.sell_expression, d)
 
-            # 没有持仓时，检查是否应该买入
-            if current_position == 0 and eval(buy_conditions):
-                self.orders[dn] = self.buy(data=d)
-                self.entry_prices[dn] = d.close[0]
+                # 没有持仓时，检查是否应该买入
+                if current_position == 0 and eval(buy_conditions):
+                    self.orders[dn] = self.buy(data=d)
+                    self.entry_prices[dn] = d.close[0]
 
-            # 持有做多仓位时，检查是否应该平仓
-            elif current_position > 0 and eval(sell_conditions):
-                self.orders[dn] = self.close(data=d)
+                # 持有做多仓位时，检查是否应该平仓
+                elif current_position > 0 and eval(sell_conditions):
+                    self.orders[dn] = self.close(data=d)
+            except Exception as e:
+                # 如果在处理特定股票时发生异常，打印错误信息
+                print(f"Error processing date: {dt}, stock: {dn}: {e}")
 
 
 def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression, plot=False):
     cerebro = bt.Cerebro()
     cerebro.addstrategy(MultiStrategy, buy_expression=buy_expression, sell_expression=sell_expression)
 
-    for file in tqdm(data_files, desc='Processing Data Files'):
+    for file in data_files:
         data = bt.feeds.GenericCSVData(
             dataname=file,
-            fromdate=datetime.strptime(from_date, '%Y-%m-%d'),
-            todate=datetime.strptime(to_date, '%Y-%m-%d'),
+            fromdate=from_date,
+            todate=to_date,
             nullvalue=0.0,
             dtformat=('%Y-%m-%d'), 
             datetime=0,
@@ -147,25 +156,3 @@ def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression
         cerebro.plot(style='candlestick', barup='red', bardown='green')
     
     return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
-
-# 測試代碼
-# 讀取 CSV 文件以獲取台灣股票代碼列表
-taiwan_stocks_df = pd.read_csv('Stock/taiwan_stock_codes.csv')  # 替換為你的 CSV 文件路徑
-# 確保股票代碼為字符串格式並添加 ".TW"
-taiwan_stocks = taiwan_stocks_df['Stock Code'].apply(lambda x: f"{x}").tolist()
-
-# 創建數據文件路徑列表
-data_folder = 'Stock/trainDataSet'  # 設定你的數據集文件夾路徑
-data_files = [f'{data_folder}/{stock}.csv' for stock in taiwan_stocks]  # 假設每個股票的數據文件名是 '{股票代碼}.csv'
-
-# # 測試代碼
-# data_files = ['Stock/trainDataSet/2230.csv', 'Stock/trainDataSet/2331.csv']  # 更新您的股票数据文件路径
-
-buy_expression = 'self.ema5[0] > self.ema10[0]'
-sell_expression = 'self.ema22[0] < self.ema22[-1] and self.ema10[0] < self.ema10[-1] and self.ema66[0] < self.ema66[-1]'
-
-buy_expression = 'self.ema5[0] > self.ema10[0] and self.ema10[0] > self.ema22[0] and self.ema22[0] > self.ema66[0] and self.ema66[0] > self.ema264[0] and self.ema5[0] > self.ema5[-1] and self.ema10[0] > self.ema10[-1] and self.ema22[0] > self.ema22[-1] and self.ema66[0] > self.ema66[-1] and self.ema264[0] > self.ema264[-1] and abs((self.ema10[0] - self.ema22[0]) / self.ema22[0]) < 0.02 and abs((self.ema22[0] - self.ema66[0]) / self.ema66[0]) < 0.02 and abs((self.ema66[0] - self.ema264[0]) / self.ema264[0]) < 0.1'
-sell_expression = 'self.ema22[0] < self.ema22[-1] and self.ema10[0] < self.ema10[-1] and self.ema66[0] < self.ema66[-1]'
-
-results = run_backtest(data_files, '2015-01-01', '2019-01-01', buy_expression, sell_expression)
-print(results[0])

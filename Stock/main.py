@@ -1,5 +1,5 @@
 # main.py
-import data_collection
+import pandas as pd
 import backTesting_logic
 from datetime import datetime, timedelta
 import time
@@ -10,14 +10,9 @@ import indicators
 
 
 def get_dates():
-    start_date = datetime(2019, 1, 1)  # 指定年份为2022，月份为1，日期为1
-    end_date = datetime.utcnow()  # 假设结束日期为当前日期
+    start_date = datetime(2015, 1, 1)  
+    end_date = datetime(2019, 1, 1)  
     return start_date, end_date
-
-def collect_and_save_data(symbol, timeframe, start_date, end_date, filename):
-    df = data_collection.collect_data(symbol, timeframe, start_date, end_date)
-    df.to_csv(filename, index=False)
-    return filename
 
 def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_file, train_start, train_end):
     buy_expression = backTesting_logic.generate_expressions(buy_pool, buy_combined)
@@ -36,7 +31,6 @@ def run_single_backtest(data_file, start_date, end_date, buy_expr, sell_expr):
 
 def main():
     config = {
-        'symbol': '2376.TW',
         'timeframe': '1d',  
         'buy_pool': [indicators.bullish_alignment, indicators.allup, indicators.no_5ma, indicators.is_divergence_less_than_3_percent_5_10, indicators.is_divergence_less_than_3_percent_10_22, indicators.is_divergence_less_than_3_percent_22_66, indicators.is_divergence_less_than_5_percent_5_10, indicators.is_divergence_less_than_5_percent_10_22, indicators.is_divergence_less_than_5_percent_22_66, indicators.volume_indicator],  
         'sell_pool': [indicators.ema_downtrend_22, indicators.ema_downtrend_10],  
@@ -46,11 +40,17 @@ def main():
 
     train_start, train_end = get_dates()
 
-    filename = f'Stock/trainDataSet/{train_start.strftime("%Y-%m-%d")}_{config["symbol"]}.csv'
-    train_file = collect_and_save_data(config['symbol'], config['timeframe'], train_start, train_end, filename)
+    # 讀取 CSV 文件以獲取台灣股票代碼列表
+    taiwan_stocks_df = pd.read_csv('Stock/test.csv')  # 替換為你的 CSV 文件路徑
+    # 確保股票代碼為字符串格式
+    taiwan_stocks = taiwan_stocks_df['StockID'].apply(lambda x: f"{x}").tolist()
+
+    # 創建數據文件路徑列表
+    data_folder = 'Stock/trainDataSet'  # 設定你的數據集文件夾路徑
+    data_files = [f'{data_folder}/{stock}.csv' for stock in taiwan_stocks]  # 假設每個股票的數據文件名是 '{股票代碼}.csv'
 
     start_time = time.time()
-    results = run_backtests(config['buy_pool'], config['sell_pool'], config['buy_combined'], config['sell_combined'], train_file, train_start, train_end)
+    results = run_backtests(config['buy_pool'], config['sell_pool'], config['buy_combined'], config['sell_combined'], data_files, train_start, train_end)
 
     print('------------------------------Sort by value-------------------------------------------------')
 
@@ -75,7 +75,6 @@ def main():
     for result in top_3_results:
         value, buy_expression, sell_expression, sharpe, drawdown = result
         print(f"買入策略組合: {buy_expression}, \n賣出策略組合: {sell_expression}, \n淨收益: {value}, \nsharpe: {sharpe}, \nMDD: {drawdown}\n")
-        backTesting_logic.run_backtest(train_file, train_start, train_end, buy_expression, sell_expression, True)
 
 
     print('------------------------------Sort by sharpe-------------------------------------------------')
@@ -98,15 +97,9 @@ def main():
             top_3_results.append(result)
             selected_sharpes.add(sharpe)
 
-    first_run = True
     for result in top_3_results:
         value, buy_expression, sell_expression, sharpe, drawdown = result
         print(f"買入策略組合: {buy_expression}, \n賣出策略組合: {sell_expression}, \n淨收益: {value}, \nsharpe: {sharpe}, \nMDD: {drawdown}\n")
-        if first_run:
-            backTesting_logic.run_backtest(train_file, train_start, train_end, buy_expression, sell_expression, True)
-            first_run = False
-        else:
-            backTesting_logic.run_backtest(train_file, train_start, train_end, buy_expression, sell_expression)
 
     end_time = time.time()
     print(f"執行時間：{end_time - start_time} 秒")
