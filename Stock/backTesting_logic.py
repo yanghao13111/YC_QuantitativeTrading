@@ -42,6 +42,7 @@ class MultiStrategy(bt.Strategy):
         # 创建一个字典来跟踪每个数据集的订单和价格
         self.orders = {}
         self.entry_prices = {}
+        self.entry_dates = {}  # 新增一个字典来跟踪买入日期
         self.trade_list = []
         self.trade_analyzer = None
 
@@ -93,6 +94,24 @@ class MultiStrategy(bt.Strategy):
             })
 
 
+    def notify_order(self, order):
+        dt, dn = self.datetime.date(), order.data._name
+        if order.status in [bt.Order.Submitted, bt.Order.Accepted]:
+            # 订单被提交或接受时打印信息
+            print(f'{dt}: Order Submitted/Accepted - {order.info["name"]}, Type: {"Buy" if order.isbuy() else "Sell"}')
+
+        if order.status in [bt.Order.Completed]:
+            if order.isbuy():
+                self.entry_prices[dn] = order.executed.price
+                self.entry_dates[dn] = dt
+                print(f'{dt}: BUY EXECUTED - {dn}, Price: {order.executed.price}, Cost: {order.executed.value}, Commission: {order.executed.comm}')
+            elif order.issell():
+                print(f'{dt}: SELL EXECUTED - {dn}, Price: {order.executed.price}, Cost: {order.executed.value}, Commission: {order.executed.comm}')
+
+        elif order.status in [bt.Order.Canceled, bt.Order.Margin, bt.Order.Rejected]:
+            print(f'{dt}: Order Canceled/Margin/Rejected')
+
+
     def next(self):
         for i, d in enumerate(self.datas):
             dt, dn = self.datetime.date(), d._name
@@ -124,11 +143,14 @@ class MultiStrategy(bt.Strategy):
 
                 # 没有持仓时，检查是否应该买入
                 if current_position == 0 and eval(buy_conditions):
+                    print(f'next {dt}: BUY EXECUTED - {dn}, Price: {d.close[0]}')
                     self.orders[dn] = self.buy(data=d)
                     self.entry_prices[dn] = d.close[0]
+                    self.entry_dates[dn] = dt
 
                 # 持有做多仓位时，检查是否应该平仓
-                elif current_position > 0 and eval(sell_conditions) and d.volume[0] != 0:
+                elif current_position > 0 and eval(sell_conditions) and d.volume[0] >= 0:
+                    print(f'next {dt}: SELL EXECUTED - {dn}, Price: {d.close[0]}')
                     self.orders[dn] = self.close(data=d)
 
             except Exception as e:
@@ -138,7 +160,7 @@ class MultiStrategy(bt.Strategy):
 
 def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression, plot=False, verbose=True):
     cerebro = bt.Cerebro()
-    cerebro.broker = bt.brokers.BackBroker(coc=True)
+    cerebro.broker.set_coc(True)
     cerebro.addstrategy(MultiStrategy, buy_expression=buy_expression, sell_expression=sell_expression, verbose=verbose)
 
     for file in data_files:
