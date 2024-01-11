@@ -1,4 +1,5 @@
 import backtrader as bt
+import math
 from itertools import combinations, product
 from datetime import datetime
 import backtrader.analyzers as btanalyzers
@@ -34,16 +35,19 @@ class MultiStrategy(bt.Strategy):
         # 買入和賣出表達式參數
         ('buy_expression', ''),
         ('sell_expression', ''),
+        ('verbose', True),
     )
 
     def __init__(self):
         # 创建一个字典来跟踪每个数据集的订单和价格
         self.orders = {}
         self.entry_prices = {}
-        self.trade_list = [] 
+        self.trade_list = []
+        self.trade_analyzer = None
 
         for i, d in enumerate(self.datas):
-            print(f"Initializing indicators for {d._name}")  # 打印当前正在处理的股票名称
+            if self.params.verbose:  # 根據 verbose 參數決定是否打印
+                print(f"Initializing indicators for {d._name}")  # 打印当前正在处理的股票名称
             # 对于每只股票，创建技术指标
             self.orders[d._name] = None
             self.entry_prices[d._name] = None
@@ -77,16 +81,38 @@ class MultiStrategy(bt.Strategy):
             # d.minusDI = d.dmi.minusDI
 
 
+    def notify_trade(self, trade):
+        if trade.isclosed:
+            entry_price = trade.price * 1000  # 買入價格
+            profit_ratio = trade.pnl / entry_price  # 計算損益比例
+
+            self.trade_list.append({
+                'name': trade.data._name,
+                'profit': trade.pnlcomm,
+                'profit_ratio': profit_ratio
+            })
+
+
     def next(self):
         for i, d in enumerate(self.datas):
             dt, dn = self.datetime.date(), d._name
             try:
-                # 打印当前日期和正在处理的股票名称
-                print(f"Processing date: {dt}, stock: {dn}")
+                if self.params.verbose:  # 根據 verbose 參數決定是否打印
+                    print(f"Processing date: {dt}, stock: {dn}")
 
                 # 获取当前数据集的订单和持仓
                 current_order = self.orders[dn]
                 current_position = self.getposition(d).size
+
+                # 斜率
+                slope_ema5 = (d.ema5[0] - d.ema5[-1])
+                slope_ema10 = (d.ema10[0] - d.ema10[-1])
+                slope_ema22 = (d.ema22[0] - d.ema22[-1])
+                slope_ema66 = (d.ema66[0] - d.ema66[-1])
+                angle_ema5 = math.atan(slope_ema5) * (180 / math.pi)  # 轉換為角度
+                angle_ema10 = math.atan(slope_ema10) * (180 / math.pi)  # 轉換為角度
+                angle_ema22 = math.atan(slope_ema22) * (180 / math.pi)  # 轉換為角度
+                angle_ema66 = math.atan(slope_ema66) * (180 / math.pi)  # 轉換為角度
 
                 # 检查是否有未完成的订单
                 if current_order and current_order.status in [bt.Order.Submitted, bt.Order.Accepted]:
@@ -102,16 +128,18 @@ class MultiStrategy(bt.Strategy):
                     self.entry_prices[dn] = d.close[0]
 
                 # 持有做多仓位时，检查是否应该平仓
-                elif current_position > 0 and eval(sell_conditions):
+                elif current_position > 0 and eval(sell_conditions) and d.volume[0] != 0:
                     self.orders[dn] = self.close(data=d)
+
             except Exception as e:
                 # 如果在处理特定股票时发生异常，打印错误信息
                 print(f"Error processing date: {dt}, stock: {dn}: {e}")
 
 
-def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression, plot=False):
+def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression, plot=False, verbose=True):
     cerebro = bt.Cerebro()
-    cerebro.addstrategy(MultiStrategy, buy_expression=buy_expression, sell_expression=sell_expression)
+    cerebro.broker = bt.brokers.BackBroker(coc=True)
+    cerebro.addstrategy(MultiStrategy, buy_expression=buy_expression, sell_expression=sell_expression, verbose=verbose)
 
     for file in data_files:
         data = bt.feeds.GenericCSVData(
@@ -142,6 +170,7 @@ def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression
     cerebro.broker.setcommission(commission=0.0035)
 
     # 添加分析器
+    cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name='trade_analyzer')
     cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio', timeframe=bt.TimeFrame.Days)
     cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
 
@@ -151,8 +180,34 @@ def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression
     sharpe_ratio = results[0].analyzers.sharpe_ratio.get_analysis()['sharperatio']
     max_drawdown = results[0].analyzers.drawdown.get_analysis()['max']['drawdown']
 
+    # 根據損益比例排序交易，並選出虧損最多的前五名
+    trades = sorted(results[0].trade_list, key=lambda x: x['profit_ratio'])
+
+    # 选择盈利最高的前五名和虧損最多的前五名交易
+    best_trades = trades[-5:]
+    worst_trades = trades[:5]
+
     if plot:
         # 显示图表
         cerebro.plot(style='candlestick', barup='red', bardown='green')
     
-    return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown
+    return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown, best_trades, worst_trades
+
+# # 測試代碼
+# # 讀取 CSV 文件以獲取台灣股票代碼列表
+# taiwan_stocks_df = pd.read_csv('Stock/test.csv')  # 替換為你的 CSV 文件路徑
+# # 確保股票代碼為字符串格式並添加 ".TW"
+# taiwan_stocks = taiwan_stocks_df['StockID'].apply(lambda x: f"{x}").tolist()
+
+# # 創建數據文件路徑列表
+# data_folder = 'Stock/trainDataSet'  # 設定你的數據集文件夾路徑
+# data_files = [f'{data_folder}/{stock}.csv' for stock in taiwan_stocks]  # 假設每個股票的數據文件名是 '{股票代碼}.csv'
+
+# # # 測試代碼
+# # data_files = ['Stock/trainDataSet/2230.csv']  # 更新您的股票数据文件路径
+
+# buy_expression = 'self.ema5[0] > self.ema10[0] and self.ema10[0] > self.ema22[0] and self.ema22[0] > self.ema66[0] and self.ema66[0] > self.ema264[0] and self.ema5[0] > self.ema5[-1] and self.ema10[0] > self.ema10[-1] and self.ema22[0] > self.ema22[-1] and self.ema66[0] > self.ema66[-1] and self.ema264[0] > self.ema264[-1] and abs((self.ema10[0] - self.ema22[0]) / self.ema22[0]) < 0.02 and abs((self.ema22[0] - self.ema66[0]) / self.ema66[0]) < 0.02 and abs((self.ema66[0] - self.ema264[0]) / self.ema264[0]) < 0.1 and self.volume[0] > 2 * self.volume[-1] and self.volume[0] > 300 * 1000'
+# sell_expression = 'self.ema10[0] < self.ema10[-1]'
+
+# results = run_backtest(data_files, '2015-01-01', '2019-01-01', buy_expression, sell_expression)
+# print(results[0])

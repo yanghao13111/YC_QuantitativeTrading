@@ -181,7 +181,7 @@ def run_backtest(data_files, from_date, to_date, buy_expression, sell_expression
 
 # 測試代碼
 # 讀取 CSV 文件以獲取台灣股票代碼列表
-taiwan_stocks_df = pd.read_csv('Stock/tets.csv')  # 替換為你的 CSV 文件路徑
+taiwan_stocks_df = pd.read_csv('Stock/test.csv')  # 替換為你的 CSV 文件路徑
 # 確保股票代碼為字符串格式並添加 ".TW"
 taiwan_stocks = taiwan_stocks_df['StockID'].apply(lambda x: f"{x}").tolist()
 

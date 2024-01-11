@@ -8,8 +8,8 @@ folder_path = 'Stock/trainDataSet'
 stock_row_counts = {}
 
 # 设定日期范围
-start_date = '2015-01-01'
-end_date = '2019-01-01'
+start_date = '2019-01-01'
+end_date = '2022-01-01'
 
 # 遍歷資料夾中的所有CSV文件
 for file_name in os.listdir(folder_path):

@@ -45,6 +45,10 @@ is_divergence_less_than_3_percent_5_10 = 'abs((self.ema5[0] - self.ema10[0]) / s
 is_divergence_less_than_3_percent_10_22 = 'abs((self.ema10[0] - self.ema22[0]) / self.ema22[0]) < 0.03'
 is_divergence_less_than_3_percent_22_66 = 'abs((self.ema22[0] - self.ema66[0]) / self.ema66[0]) < 0.03'
 
+angle_ema5 = 'angle_ema5 >= 30'
+angle_ema10 = 'angle_ema10 >= 30'
+angle_ema22 = 'angle_ema22 >= 30'
+
 
 # 檢查今天的交易量是否至少是昨天交易量的兩倍
 volume_indicator = 'self.volume[0] > 2 * self.volume[-1]'
