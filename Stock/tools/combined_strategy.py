@@ -19,7 +19,7 @@ N = True
 O = False
 
 # 创建一个包含 10 个条件的列表
-conditions = ['A', 'B', 'C', 'D', 'E', 'F']
+conditions = ['A', 'B', 'C', 'D']
 
 # 定义一个函数来生成所有条件的组合
 def generate_expressions(conditions):

@@ -31,10 +31,10 @@ Y = False
 Z = True
 
 # 设置最多要取的条件数
-buy_pool_number = 3
-sell_pool_number = 3
-buy_combined = 2
-sell_combined = 2
+buy_pool_number = 4
+sell_pool_number = 4
+buy_combined = 4
+sell_combined = 4
 
 # 定义一个函数来生成所有条件的组合，根据 combined_number 参数确定组合的最大长度
 def generate_expressions(conditions, combined_number):
@@ -67,8 +67,8 @@ expression_combinations = list(itertools.product(buy_expression, sell_expression
 end_time = time.time()
 time_diff = end_time - start_time
 
-for expr in expression_combinations:
-    print(f"{expr}")
+# for expr in expression_combinations:
+#     print(f"{expr}")
 
 # 打印组合数和执行时间
 print(f"buy組合數: {len(buy_expression)} (buy_pool_number: {buy_pool_number}, buy_combined: {buy_combined})")

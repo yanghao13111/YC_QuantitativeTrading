@@ -1,6 +1,6 @@
 # main.py
 import pandas as pd
-import backTesting_logic
+import Stock.backtest.backTesting_logic as backTesting_logic
 from datetime import datetime, timedelta
 import time
 from joblib import Parallel, delayed
@@ -10,8 +10,8 @@ import indicators
 
 
 def get_dates():
-    start_date = datetime(2015, 1, 1)  
-    end_date = datetime(2019, 1, 1)  
+    start_date = datetime(2020, 1, 1)  
+    end_date = datetime(2021, 1, 1)  
     return start_date, end_date
 
 def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_file, train_start, train_end):
@@ -27,15 +27,15 @@ def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_file, 
     return backtest_results
 
 def run_single_backtest(data_file, start_date, end_date, buy_expr, sell_expr):
-    return backTesting_logic.run_backtest(data_file, start_date, end_date, buy_expr, sell_expr)
+    return backTesting_logic.run_backtest(data_file, start_date, end_date, buy_expr, sell_expr, '', verbose=False)
 
 def main():
     config = {
         'timeframe': '1d',  
-        'buy_pool': [indicators.bullish_alignment, indicators.allup, indicators.no_5ma, indicators.is_divergence_less_than_3_percent_5_10, indicators.is_divergence_less_than_3_percent_10_22, indicators.is_divergence_less_than_3_percent_22_66, indicators.is_divergence_less_than_5_percent_5_10, indicators.is_divergence_less_than_5_percent_10_22, indicators.is_divergence_less_than_5_percent_22_66, indicators.volume_indicator],  
-        'sell_pool': [indicators.ema_downtrend_22, indicators.ema_downtrend_10],  
-        'buy_combined': 10,
-        'sell_combined': 2,
+        'buy_pool': [indicators.bullish_alignment, indicators.allup, indicators.no_5ma, indicators.volume_indicator],  
+        'sell_pool': ['dt > self.entry_dates[dn]'],    
+        'buy_combined': 4,
+        'sell_combined': 1,
     }
 
     train_start, train_end = get_dates()
