@@ -1,0 +1,8 @@
+ema5_h = "self.data.close[0] > self.ema5[0]"
+ema10_h = "self.data.close[0] > self.ema10[0]"
+ema22_h = "self.data.close[0] > self.ema22[0]"
+ema66_h = "self.data.close[0] > self.ema66[0]"
+ema5_l = "self.data.close[0] < self.ema5[0]"
+ema10_l = "self.data.close[0] < self.ema10[0]"
+ema22_l = "self.data.close[0] < self.ema22[0]"
+ema66_l = "self.data.close[0] < self.ema66[0]"

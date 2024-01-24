@@ -1,6 +1,7 @@
 # main.py
 import pandas as pd
-import Stock.backtest.backTesting_logic as backTesting_logic
+from itertools import combinations, product
+import backtest.single_backtest as single_backtest
 from datetime import datetime, timedelta
 import time
 from joblib import Parallel, delayed
@@ -10,13 +11,34 @@ import indicators
 
 
 def get_dates():
-    start_date = datetime(2020, 1, 1)  
+    start_date = datetime(2019, 1, 1)  
     end_date = datetime(2021, 1, 1)  
     return start_date, end_date
 
+# 定义一个函数来生成所有条件的组合
+def generate_expressions(conditions, combined_number):
+    expressions = []
+    
+    # 针对长度为 1 到 combined_number 的组合生成表达式
+    for r in range(1, min(len(conditions), combined_number) + 1):
+        for subset in combinations(conditions, r):
+            if len(subset) == 1:
+                expressions.append(subset[0])
+            else:
+                operators = list(product([' and ', ' or '], repeat=len(subset)-1))
+                for operator in operators:
+                    expr = ''
+                    for i, cond in enumerate(subset):
+                        expr += cond
+                        if i < len(operator):
+                            expr += operator[i]
+                    expressions.append(expr)
+
+    return expressions
+
 def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_file, train_start, train_end):
-    buy_expression = backTesting_logic.generate_expressions(buy_pool, buy_combined)
-    sell_expression = backTesting_logic.generate_expressions(sell_pool, sell_combined)
+    buy_expression = generate_expressions(buy_pool, buy_combined)
+    sell_expression = generate_expressions(sell_pool, sell_combined)
     expression_combinations = list(itertools.product(buy_expression, sell_expression))
     tasks = tqdm(expression_combinations)
 
@@ -27,7 +49,7 @@ def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_file, 
     return backtest_results
 
 def run_single_backtest(data_file, start_date, end_date, buy_expr, sell_expr):
-    return backTesting_logic.run_backtest(data_file, start_date, end_date, buy_expr, sell_expr, '', verbose=False)
+    return single_backtest.run_backtest(data_file, start_date, end_date, buy_expr, sell_expr, '', verbose=False)
 
 def main():
     config = {

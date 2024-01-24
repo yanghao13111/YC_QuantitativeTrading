@@ -17,6 +17,7 @@ class MultiStrategy(bt.Strategy):
         # 创建一个字典来跟踪每个数据集的订单和价格
         self.order = None 
         self.entry_price = None 
+        self.entry_open_price = 0  # 新增，用于跟踪进场当天的开盘价
         self.entry_date = None
         self.trade_list = []
         self.win_count = 0
@@ -29,7 +30,7 @@ class MultiStrategy(bt.Strategy):
             self.ema10 = bt.indicators.EMA(self.data.close, period=10)
             self.ema22 = bt.indicators.EMA(self.data.close, period=22)
             self.ema66 = bt.indicators.EMA(self.data.close, period=66)
-            # d.ema264 = bt.ind.EMA(d.close, period=264)
+            # self.ema264 = bt.indicators.EMA(self.data.close, period=264)
             self.ema_volume_5 = bt.ind.EMA(self.data.volume, period=5) 
         except Exception as e:
             print(f"Error initializing indicators for {self._name}: {e}")
@@ -58,6 +59,7 @@ class MultiStrategy(bt.Strategy):
                     print(f'next {dt}: BUY EXECUTED - {dn}, Price: {self.data.close[0]}')
                 self.order = self.buy()
                 self.entry_prices = self.data.close[0]
+                self.entry_open_price = self.data.open[0]  # 记录进场当天的开盘价
                 self.entry_dates = dt
 
             # 持有做多仓位时，检查是否应该平仓

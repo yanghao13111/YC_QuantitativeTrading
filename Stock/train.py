@@ -2,7 +2,6 @@
 import pandas as pd
 from collections import defaultdict
 import backtest.single_backtest as single_backtest
-import tools.generate_combination as combinations
 from datetime import datetime, timedelta
 import time
 from joblib import Parallel, delayed
@@ -12,13 +11,42 @@ import indicators
 
 
 def get_dates():
-    start_date = datetime(2020, 1, 1)  
+    start_date = datetime(2019, 1, 1)  
     end_date = datetime(2021, 1, 1)  
     return start_date, end_date
 
-def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_files, train_start, train_end):
-    buy_expression = combinations.generate_expressions(buy_pool, buy_combined)
-    sell_expression = combinations.generate_expressions(sell_pool, sell_combined)
+# 定义一个函数来生成所有条件的组合，固定一个条件
+def generate_expressions(conditions, fixed_condition):
+    expressions = []
+    
+    # 从条件列表中移除固定条件
+    other_conditions = [cond for cond in conditions if cond != fixed_condition]
+    
+    # 当固定条件为空时，直接将条件添加到表达式列表
+    if fixed_condition == '':
+        expressions.extend(other_conditions)
+    else:
+        # 生成固定条件与其他条件的 'and' 和 'or' 组合
+        for cond in other_conditions:
+            for operator in [' and ', ' or ']:
+                expr = fixed_condition + operator + cond
+                expressions.append(expr)
+
+    return expressions
+
+def get_indicators_from_module(module):
+    indicators_dict = {}
+    for name in dir(module):
+        if not name.startswith('__'):  # 过滤掉魔术方法
+            value = getattr(module, name)
+            if isinstance(value, str):  # 确保是字符串类型的指标
+                indicators_dict[name] = value
+    return indicators_dict
+
+
+def run_backtests(buy_pool, sell_pool, buy_fixed, sell_fixed, train_files, train_start, train_end):
+    buy_expression = generate_expressions(buy_pool, buy_fixed)
+    sell_expression = generate_expressions(sell_pool, sell_fixed)
     expression_combinations = list(itertools.product(buy_expression, sell_expression))
 
     all_results = defaultdict(lambda: {
@@ -40,9 +68,9 @@ def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_files,
              for data_file in train_files]
     
     # 使用 joblib 并行执行任务
-    results = Parallel(n_jobs=-1, verbose=10)(
+    results = Parallel(n_jobs=-1, verbose=0)(
         delayed(run_single_backtest)(data_file, start, end, buy_expr, sell_expr)
-        for data_file, start, end, buy_expr, sell_expr in tasks
+        for data_file, start, end, buy_expr, sell_expr in tqdm(tasks, desc='Running backtests')
     )
 
     # 处理结果并更新 all_results
@@ -64,39 +92,21 @@ def run_backtests(buy_pool, sell_pool, buy_combined, sell_combined, train_files,
 
     return all_results
 
-    # for buy_expr, sell_expr in tqdm(expression_combinations, desc='Expression Combinations', leave=True):
-    #     for data_file in train_files:
-    #         result = run_single_backtest(data_file, train_start, train_end, buy_expr, sell_expr)
-    #         final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown, best_trades, worst_trades, win_count, total_trades = result
-    #         # 对于同一策略的结果，进行累积
-    #         strategy_key = (buy_expr, sell_expr)
-    #         # 追加列表数据
-    #         all_results[strategy_key]['final_value'].append(final_value)
-    #         all_results[strategy_key]['best_trades'].extend(best_trades)
-    #         all_results[strategy_key]['worst_trades'].extend(worst_trades)
-    #         all_results[strategy_key]['win_count'].append(win_count)
-    #         all_results[strategy_key]['total_trades'].append(total_trades)
-            
-    #         # 进行加总
-    #         all_results[strategy_key]['sum_final_value'] += final_value
-    #         all_results[strategy_key]['sum_win_count'] += win_count
-    #         all_results[strategy_key]['sum_total_trades'] += total_trades
-
-    # return all_results
-
 def run_single_backtest(data_file, start_date, end_date, buy_expr, sell_expr):
     return single_backtest.run_backtest(data_file, start_date, end_date, buy_expr, sell_expr, '', verbose=False)
 
 def main():
     config = {
         'timeframe': '1d',  
-        'buy_pool': [indicators.bullish_alignment, indicators.allup, indicators.no_5ma, indicators.volume_indicator],  
-        'sell_pool': [indicators.ema10_l],    
-        'buy_combined': 1,
-        'sell_combined': 1,
+        'buy_fixed': f'{indicators.angle20_ema10h}',
+        'sell_fixed': f'{indicators.angle50_ema66h}',
     }
-
+    # 使用函数从indicators模块获取所有指标
+    indicators_dict = get_indicators_from_module(indicators)
     train_start, train_end = get_dates()
+
+    # 创建包含所有指标表达式的列表
+    indicators_list = [expr for name, expr in indicators_dict.items()]
 
     # 讀取 CSV 文件以獲取台灣股票代碼列表
     taiwan_stocks_df = pd.read_csv('Stock/test.csv')  # 替換為你的 CSV 文件路徑
@@ -109,13 +119,13 @@ def main():
 
 
     start_time = time.time()
-    results = run_backtests(config['buy_pool'], config['sell_pool'], config['buy_combined'], config['sell_combined'], data_files, train_start, train_end)
+    results = run_backtests(indicators_list, indicators_list, config['buy_fixed'], config['sell_fixed'], data_files, train_start, train_end)
 
     results_list = list(results.items())
     # 对 all_results 按照胜率进行排序
     sorted_results = sorted(results_list, key=lambda x: x[1]['sum_win_count'] / x[1]['sum_total_trades'] if x[1]['sum_total_trades'] > 0 else 0, reverse=True)
 
-    print('------------------------------Sort by value-------------------------------------------------')
+    print('------------------------------Sort by winrate-------------------------------------------------')
 
     # 初始化一個空列表用來儲存前三名的結果
     top_3_results = []
