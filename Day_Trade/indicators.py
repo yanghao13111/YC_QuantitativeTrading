@@ -1,22 +1,30 @@
 # indicators.py
 
 # Moving Averages
-ema5_h = "self.data.close[0] > self.ema5[0]"
-ema10_h = "self.data.close[0] > self.ema10[0]"
-ema22_h = "self.data.close[0] > self.ema22[0]"
-ema66_h = "self.data.close[0] > self.ema66[0]"
-ema5_l = "self.data.close[0] < self.ema5[0]"
-ema10_l = "self.data.close[0] < self.ema10[0]"
-ema22_l = "self.data.close[0] < self.ema22[0]"
-ema66_l = "self.data.close[0] < self.ema66[0]"
+ema5_h = "self.data.close[-1] > self.ema5[-1]"
+ema10_h = "self.data.close[-1] > self.ema10[-1]"
+ema22_h = "self.data.close[-1] > self.ema22[-1]"
+ema66_h = "self.data.close[-1] > self.ema66[-1]"
+ema5_l = "self.data.close[-1] < self.ema5[-1]"
+ema10_l = "self.data.close[-1] < self.ema10[-1]"
+ema22_l = "self.data.close[-1] < self.ema22[-1]"
+ema66_l = "self.data.close[-1] < self.ema66[-1]"
 
-ema66_check = "self.data.low[0] > self.ema66[0]"
+ema66_check = "self.data.low[-1] > self.ema66[-1]"
 
-ema_uptrend_5 = 'self.ema5[0] > self.ema5[-1]'
-ema_uptrend_10 = 'self.ema10[0] > self.ema10[-1]'
-ema_uptrend_22 = 'self.ema22[0] > self.ema22[-1]'
-ema_uptrend_66 = 'self.ema66[0] > self.ema66[-1]'
-# ema_uptrend_264 = 'self.ema264[0] > self.ema264[-1]'
+ema_uptrend_5 = 'self.ema5[-1] > self.ema5[-2]'
+ema_uptrend_10 = 'self.ema10[-1] > self.ema10[-2]'
+ema_uptrend_22 = 'self.ema22[-1] > self.ema22[-2]'
+ema_uptrend_66 = 'self.ema66[-1] > self.ema66[-2]'
+ema_uptrend_264 = 'self.ema264[-1] > self.ema264[-2]'
+
+ema_downtrend_5 = 'self.ema5[-1] < self.ema5[-2]'
+ema_downtrend_10 = 'self.ema10[-1] < self.ema10[-2]'
+ema_downtrend_22 = 'self.ema22[-1] < self.ema22[-2]'
+ema_downtrend_66 = 'self.ema66[-1] < self.ema66[-2]'
+ema_downtrend_264 = 'self.ema264[-1] < self.ema264[-2]'
+
+# ------------- need to be rectified ----------------
 
 all_uptrend = 'self.ema5[0] > self.ema5[-1] and self.ema10[0] > self.ema10[-1] and self.ema22[0] > self.ema22[-1] and self.ema66[0] > self.ema66[-1]'
 all_downtrend = 'self.ema5[0] < self.ema5[-1] and self.ema10[0] < self.ema10[-1] and self.ema22[0] < self.ema22[-1]'

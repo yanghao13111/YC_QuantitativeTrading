@@ -3,84 +3,57 @@ from datetime import datetime
 import math
 import backtrader.analyzers as btanalyzers
 
-class MultiStrategy(bt.Strategy):
+class SignalStrategy(bt.Strategy):
     params = (
         # 買入和賣出表達式參數
-        ('buy_expression', ''),
-        ('sell_expression', ''),
-        ('add_expression', ''),
+        ('signal_expression', ''),
         ('verbose', True),
         ('debug', False),  # 新增 debug 參數，默認為 False
     )
 
     def __init__(self):
         # 创建一个字典来跟踪每个数据集的订单和价格
-        self.order = None 
-        self.entry_price = None 
-        self.entry_open_price = 0  # 新增，用于跟踪进场当天的开盘价
-        self.entry_date = None
+        self.order = None
+        self.short_entry_price = None
+        self.short_entry_date = None
         self.trade_list = []
         self.win_count = 0
         self.loss_count = 0
-        self.trade_analyzer = None
+        self.signal_triggered = False  # 用於跟踪是否觸發信號
 
-        try:
-            # EMA 指标
-            self.ema5 = bt.indicators.EMA(self.data.close, period=5)
-            self.ema10 = bt.indicators.EMA(self.data.close, period=10)
-            self.ema22 = bt.indicators.EMA(self.data.close, period=22)
-            self.ema66 = bt.indicators.EMA(self.data.close, period=66)
-            # self.ema264 = bt.indicators.EMA(self.data.close, period=264)
-            self.ema_volume_5 = bt.ind.EMA(self.data.volume, period=5) 
-        except Exception as e:
-            print(f"Error initializing indicators for {self._name}: {e}")
+        self.order = None
+        self.short_entry_price = None
+        self.short_entry_date = None
+        self.trade_list = []
+        self.win_count = 0
+        self.loss_count = 0
+        self.signal_triggered = False  
+
+        # 初始化 EMA 指标
+        self.ema5 = bt.indicators.EMA(self.data.close, period=5)
+        self.ema10 = bt.indicators.EMA(self.data.close, period=10)
+        self.ema22 = bt.indicators.EMA(self.data.close, period=22)
+        self.ema66 = bt.indicators.EMA(self.data.close, period=66)
+        self.ema_volume_5 = bt.ind.EMA(self.data.volume, period=5) 
 
     def next(self):
+        if len(self.data) > 1:  # 确保有足够的数据
+            if self.signal_triggered:
+                # 执行交易
+                self.order = self.sell(exectype=bt.Order.Market)
+                self.short_entry_price = self.data.open[0]
+                self.order = self.close(exectype=bt.Order.Market)
+                self.signal_triggered = False  # 重置信号
 
-        dt, dn = self.datetime.date(), self.data._name
-        try:
-            if self.params.verbose:
-                print(f"Processing date: {dt}, stock: {dn}")
+            # 基于前一天的数据生成信号
+            if eval(self.params.signal_expression):
+                self.signal_triggered = True
 
-            current_position = self.getposition().size
-
-            # 檢查是否存在賣出信號
-            sell_signal = eval(self.params.sell_expression)
-
-            # 如果當天有賣出信號且存在未完成的訂單，則取消該訂單
-            if sell_signal and self.order and self.order.status in [bt.Order.Submitted, bt.Order.Accepted]:
-                self.cancel(self.order)
-                if self.params.debug:
-                    print(f'{dt}: CANCEL ORDER - {dn}, Existing order canceled due to sell signal')
-
-            # 沒有持倉時，檢查是否應該買入
-            if current_position == 0 and not sell_signal and eval(self.params.buy_expression):
-                if self.params.debug:
-                    print(f'next {dt}: BUY EXECUTED - {dn}, Price: {self.data.close[0]}')
-                self.order = self.buy()
-                self.entry_prices = self.data.close[0]
-                self.entry_open_price = self.data.open[0]  # 记录进场当天的开盘价
-                self.entry_dates = dt
-
-            # 持有做多仓位时，检查是否应该平仓
-            elif current_position > 0:
-                # 检查是否滿足原本的賣出條件
-                sell_condition = eval(self.params.sell_expression) and self.data.volume[0] >= 0
-                if sell_condition:
-                    if self.params.debug:
-                        print(f'next {dt}: SELL EXECUTED - {dn}, Price: {self.data.close[0]}')
-                    self.orders = self.close()
-                # elif eval(self.params.add_expression):
-                #     self.orders[dn] = self.buy(data=d)
-
-        except Exception as e:
-            print(f"Error processing date: {dt}, stock: {dn}: {e}")
-            raise
 
     def notify_trade(self, trade):
         if trade.isclosed:
-            entry_price = trade.price * 1000  # 買入價格
-            profit_ratio = trade.pnl / entry_price  # 計算損益比例
+            entry_price = trade.price * 1000  # 做空入场价格
+            profit_ratio = trade.pnl / entry_price  # 计算盈亏比例
 
             if trade.pnlcomm > 0:
                 self.win_count += 1
@@ -112,10 +85,10 @@ class MultiStrategy(bt.Strategy):
                 print(f'{dt}: Order Canceled/Margin/Rejected')
 
 
-def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression, add_expression, plot=False, verbose=True):
+def run_backtest(data_file, from_date, to_date, signal_expression, plot=False, verbose=True):
     cerebro = bt.Cerebro()
     cerebro.broker.set_coc(True)
-    cerebro.addstrategy(MultiStrategy, buy_expression=buy_expression, sell_expression=sell_expression, add_expression=add_expression, verbose=verbose)
+    cerebro.addstrategy(SignalStrategy, signal_expression=signal_expression, verbose=verbose)
 
     data = bt.feeds.GenericCSVData(
         dataname=data_file,
@@ -143,9 +116,7 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
     # 设置佣金
     cerebro.broker.setcommission(commission=0.0035)
 
-    # 添加分析器
-    cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name='trade_analyzer')
-    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio', timeframe=bt.TimeFrame.Days)
+    cerebro.addanalyzer(btanalyzers.SharpeRatio, _name='sharpe_ratio')
     cerebro.addanalyzer(btanalyzers.DrawDown, _name='drawdown')
 
     # 运行策略
@@ -164,12 +135,19 @@ def run_backtest(data_file, from_date, to_date, buy_expression, sell_expression,
     # 計算勝率
     total_trades = results[0].win_count + results[0].loss_count
     win_count = results[0].win_count
+    win_ratio = win_count / total_trades if total_trades > 0 else 0
+    trades = sorted(results[0].trade_list, key=lambda x: (x['profit_ratio'], win_ratio), reverse=True)
+
+    # 选择盈利最高的前五名和胜率最高的前五名交易
+    best_trades_by_profit = trades[:5]
+    best_trades_by_win_ratio = sorted(trades, key=lambda x: win_ratio, reverse=True)[:5]
 
     if plot:
         # 显示图表
         cerebro.plot(style='candlestick', barup='red', bardown='green')
     
-    return final_value, buy_expression, sell_expression, sharpe_ratio, max_drawdown, best_trades, worst_trades, win_count, total_trades
+    return final_value, signal_expression, sharpe_ratio, max_drawdown, best_trades_by_profit, best_trades_by_win_ratio, win_ratio, total_trades
+
 
 
 # # 測試代碼
